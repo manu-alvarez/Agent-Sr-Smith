@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { DEFAULT_OLLAMA_HOST, listOllamaModels, type OllamaModel } from "../../lib/ollama";
+import { DEFAULT_OLLAMA_HOST, listOllamaModels, preferModel, type OllamaModel } from "../../lib/ollama";
 
 const HOST_KEY = "sr-smith-ollama-host";
 const MODEL_KEY = "sr-smith-ollama-model";
@@ -30,7 +30,7 @@ export function OllamaBar({
           return;
         }
         const saved = localStorage.getItem(MODEL_KEY);
-        const next = found.find((item) => item.name === saved)?.name ?? found[0]!.name;
+        const next = found.some((item) => item.name === saved) ? saved! : preferModel(found);
         onModelRef.current(next);
         localStorage.setItem(MODEL_KEY, next);
         setStatus(`${found.length} modelos en ${host}`);

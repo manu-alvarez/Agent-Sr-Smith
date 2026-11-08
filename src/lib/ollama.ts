@@ -20,14 +20,31 @@ export function parseOllamaTags(body: unknown): OllamaModel[] {
     .map((item) => ({ name: item.name as string, size: item.size ?? 0 }));
 }
 
+export function preferModel(models: OllamaModel[]): string {
+  const chat = models.filter((item) => !item.name.startsWith("nomic-embed"));
+  return chat.find((item) => item.name === "gemma4:latest")?.name ?? [...chat].sort((a, b) => b.size - a.size)[0]?.name ?? "";
+}
+
+async function fetchOllama(host: string, path: string, init?: RequestInit): Promise<Response> {
+  if (typeof window !== "undefined") {
+    try {
+      const proxied = await fetch(`/ollama-proxy${path}`, init);
+      if ((proxied.headers.get("content-type") ?? "").includes("json")) return proxied;
+    } catch {
+      // El proxy solo existe en el servidor de desarrollo. Fuera de él se llama a Ollama directo.
+    }
+  }
+  return fetch(`${ollamaOrigin(host)}${path}`, init);
+}
+
 export async function listOllamaModels(host: string, signal?: AbortSignal): Promise<OllamaModel[]> {
-  const response = await fetch(`${ollamaOrigin(host)}/api/tags`, { signal });
+  const response = await fetchOllama(host, "/api/tags", { signal });
   if (!response.ok) throw new Error(`Ollama respondió ${response.status}.`);
   return parseOllamaTags(await response.json());
 }
 
 export async function ollamaChat(host: string, model: string, system: string, user: string, signal?: AbortSignal): Promise<string> {
-  const response = await fetch(`${ollamaOrigin(host)}/api/chat`, {
+  const response = await fetchOllama(host, "/api/chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
     signal,
@@ -41,8 +58,8 @@ export async function ollamaChat(host: string, model: string, system: string, us
     }),
   });
   if (!response.ok) throw new Error(`Ollama respondió ${response.status}.`);
-  const body = (await response.json()) as { message?: { content?: string } };
-  const content = body.message?.content?.trim();
+  const body = (await response.json()) as { message?: { content?: string; thinking?: string } };
+  const content = body.message?.content?.trim() || body.message?.thinking?.trim();
   if (!content) throw new Error("El modelo no devolvió texto.");
   return content;
 }

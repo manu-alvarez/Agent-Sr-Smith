@@ -1,4 +1,5 @@
 import { readdirSync } from "node:fs";
+import http from "node:http";
 import { join } from "node:path";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
@@ -61,6 +62,55 @@ function pgliteBootstrapPlugin(): Plugin {
  * and returns the 302 / completion HTML. Deployed apps do not use the popup
  * (full-page OAuth redirect), so `apply: "serve"` is enough.
  */
+function ollamaProxyPlugin(): Plugin {
+  const upstream = process.env.OLLAMA_UPSTREAM ?? "http://100.100.2.10:11434";
+  const proxy = new URL(process.env.OLLAMA_HTTP_PROXY ?? "http://127.0.0.1:1056");
+  return {
+    name: "sr-smith:ollama-proxy",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ?? "";
+        if (!url.startsWith("/ollama-proxy/")) {
+          next();
+          return;
+        }
+        const chunks: Buffer[] = [];
+        req.on("data", (chunk: Buffer) => chunks.push(chunk));
+        req.on("end", () => {
+          const body = Buffer.concat(chunks);
+          const target = new URL(url.slice("/ollama-proxy".length), upstream);
+          const preq = http.request(
+            {
+              host: proxy.hostname,
+              port: proxy.port,
+              method: req.method,
+              path: target.toString(),
+              headers: {
+                host: target.host,
+                "content-type": req.headers["content-type"] ?? "application/json",
+                "content-length": body.length,
+              },
+            },
+            (pres) => {
+              res.statusCode = pres.statusCode ?? 502;
+              const type = pres.headers["content-type"];
+              if (type) res.setHeader("content-type", type);
+              pres.pipe(res);
+            },
+          );
+          preq.on("error", () => {
+            res.statusCode = 502;
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify({ error: "sin ruta a Ollama" }));
+          });
+          preq.end(body);
+        });
+      });
+    },
+  };
+}
+
 function authPopupPlugin(): Plugin {
   return {
     name: "app-builder:auth-popup",
@@ -162,6 +212,7 @@ export default defineConfig(({ command, isPreview }) => ({
   resolve: { tsconfigPaths: true },
   plugins: [
     pgliteBootstrapPlugin(),
+    ollamaProxyPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
