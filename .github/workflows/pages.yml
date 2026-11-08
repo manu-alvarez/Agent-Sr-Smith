@@ -16,6 +16,7 @@ concurrency:
 
 jobs:
   build:
+    if: github.repository == 'manu-alvarez/Agent-Sr-Smith'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -39,6 +40,7 @@ jobs:
           path: dist/client
 
   deploy:
+    if: github.repository == 'manu-alvarez/Agent-Sr-Smith'
     needs: build
     runs-on: ubuntu-latest
     environment:
