@@ -76,13 +76,13 @@ const PROFILE_FACE: Record<string, { title: string; when: string }> = {
 };
 
 const NAV: Array<{ id: View; label: string; icon: typeof Play }> = [
-  { id: "scaffold", label: "Scaffolding", icon: Download },
-  { id: "mission", label: "Misión", icon: Play },
-  { id: "graph", label: "Grafo", icon: GitBranch },
-  { id: "agents", label: "Roles", icon: Users },
-  { id: "policy", label: "Política", icon: Shield },
-  { id: "contracts", label: "Contratos", icon: FileJson },
-  { id: "architecture", label: "Módulos", icon: Boxes },
+  { id: "scaffold", label: "Carpeta base", icon: Download },
+  { id: "mission", label: "Tu proyecto", icon: Play },
+  { id: "graph", label: "Pasos", icon: GitBranch },
+  { id: "agents", label: "Quién hace qué", icon: Users },
+  { id: "policy", label: "Reglas", icon: Shield },
+  { id: "contracts", label: "Acuerdos", icon: FileJson },
+  { id: "architecture", label: "Piezas", icon: Boxes },
 ];
 
 function depths(tasks: Task[]): Record<string, number> {
@@ -121,13 +121,13 @@ export function Console() {
   const [surface, setSurface] = useState<"computer" | "mobile">("computer");
   const [view, setView] = useState<View>("mission");
   const [details, setDetails] = useState(false);
-  const [agentOpen, setAgentOpen] = useState(false);
   const [ollamaHost, setOllamaHost] = useState(storedOllamaHost);
   const [ollamaModel, setOllamaModel] = useState("");
   const [expertNote, setExpertNote] = useState<string | null>(null);
   const [modelNote, setModelNote] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
   const [objective, setObjective] = useState("");
+  const [scene, setScene] = useState<"where" | "shape" | "env" | "who" | "goal" | "download" | "agent">("where");
   const [report, setReport] = useState<ExecutionReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [packaging, setPackaging] = useState(false);
@@ -136,17 +136,15 @@ export function Console() {
   const rules = useMemo(() => explainPolicy(), []);
   const slug = projectSlug(projectName);
   const ready = projectName.trim().length > 0 && objective.trim().length > 0 && (surface === "computer" || mobile.length > 0);
-  const step: 1 | 2 | 3 = report ? 3 : 1;
 
   function goToStep(next: 1 | 2 | 3) {
-    if (next === 2) {
-      execute();
-      document.getElementById("descarga")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
-    document.getElementById(next === 1 ? "elige" : "descarga")?.scrollIntoView({ behavior: "smooth", block: "start" });
-    if (next === 1) document.getElementById("project-name")?.focus();
+    setDetails(false);
+    if (next === 1) setScene("where");
+    if (next === 2) setScene("goal");
+    if (next === 3) setScene(report ? "download" : "goal");
   }
+
+  const phase = scene === "download" ? 3 : scene === "who" || scene === "goal" ? 2 : 1;
 
   function execute(nextObjective = objective, nextProfile = profileId) {
     if (!nextObjective.trim() || !projectName.trim()) {
@@ -159,6 +157,7 @@ export function Console() {
       setExpertNote(null);
       setError(null);
       setView("mission");
+      setScene("download");
       if (!ollamaModel) {
         setModelNote(null);
         return;
@@ -183,159 +182,53 @@ export function Console() {
   }
 
   return (
-    <main className="relative min-h-screen max-w-full overflow-x-hidden text-fg">
-      <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
+    <main className="relative min-h-screen overflow-x-hidden text-fg">
+      <div className="pointer-events-none fixed inset-0" aria-hidden="true">
         <img src={publicUrl("/sr-smith.jpg")} alt="" className="h-full w-full object-cover object-[center_18%]" />
-        <div className="absolute inset-0 bg-[#070b09]/82" />
-      </div>
-      <MatrixRain className="pointer-events-none fixed inset-0 z-0 h-full w-full" />
-      <div className="relative z-10">
-      <section className="relative min-h-[46vh] overflow-hidden border-b border-line">
-        <img
-          src={publicUrl("/sr-smith.jpg")}
-          alt="Retrato de Sr.Smith, con código verde sobre el rostro."
-          className="absolute inset-0 h-full w-full object-cover object-[center_18%]"
-        />
-        <MatrixRain className="absolute inset-0 h-full w-full" fontSize={18} />
+        <div className="absolute inset-0 bg-[#070b09]/48" />
+        <MatrixRain className="absolute inset-0 h-full w-full" />
         <div className="matrix-scan absolute inset-0" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#070b09] via-[#070b09]/45 to-[#070b09]/10" />
-        <div className="relative mx-auto flex min-h-[46vh] max-w-6xl flex-col justify-end px-4 pb-8 pt-16 sm:px-6">
-          <p className="matrix-title font-mono text-xs tracking-widest text-signal">SR.SMITH · 1.0</p>
-          <h1 className="matrix-title mt-2 max-w-xl text-4xl font-semibold tracking-tight text-signal sm:text-5xl">Crea tu proyecto y llévatelo</h1>
-          <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#ebe6d6]/90">
-            Elige qué construir, prepara el paquete y descárgalo. El ZIP trae el código, las pruebas y los archivos para abrirlo donde trabajas.
-          </p>
-        </div>
-        <div className="matrix-line absolute inset-x-0 bottom-0" />
-      </section>
-      <header className="sticky top-0 z-10 border-b border-line bg-[#121614]/80 backdrop-blur-md">
-        <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="font-mono text-xs tracking-widest text-signal">SR.SMITH</p>
-            <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
-              <div className="flex flex-wrap justify-end gap-2">
-              <button
-                type="button"
-                aria-pressed={agentOpen}
-                onClick={() => {
-                  setAgentOpen((open) => !open);
-                  setDetails(false);
-                  setView("mission");
-                }}
-                className={
-                  "inline-flex h-11 items-center rounded-full border px-4 text-sm " +
-                  (agentOpen ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg")
-                }
-              >
-                {agentOpen ? "Volver al proyecto" : "Crear agente"}
-              </button>
-              <button
-                type="button"
-                aria-pressed={details}
-                onClick={() => {
-                  setAgentOpen(false);
-                  setDetails((open) => !open);
-                  setView("mission");
-                }}
-                className={
-                  "inline-flex h-11 items-center rounded-full border px-4 text-sm " +
-                  (details ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg")
-                }
-              >
-                {details ? "Volver a tu proyecto" : "Ver cómo decide"}
-              </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  setAgentOpen(false);
-                  setDetails(true);
-                  setView("scaffold");
-                }}
-                className="text-left font-mono text-xs text-muted underline-offset-2 hover:underline"
-              >
-                Plano base, sin tu proyecto
-              </button>
-            </div>
-          </div>
-          {!agentOpen && (
-          <ol className="grid grid-cols-3 gap-2" aria-label="Camino">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,#070b09_75%)]" />
+      </div>
+      <div className="relative z-10 mx-auto flex min-h-screen w-full max-w-xl flex-col justify-center px-4 py-8">
+        <p className="matrix-title font-mono text-sm tracking-[0.35em] text-signal">SR.SMITH</p>
+        {scene !== "agent" && (
+          <ol className="mt-4 flex items-center gap-2" aria-label="Camino">
             {(
               [
-                [1, "Elige", "El formulario"],
-                [2, "Prepara", "Crea el paquete"],
-                [3, "Descarga", "El ZIP"],
+                [1, "Elige"],
+                [2, "Describe"],
+                [3, "Descarga"],
               ] as const
-            ).map(([number, label, hint]) => (
-              <li key={number}>
+            ).map(([number, label], index) => (
+              <li key={number} className="flex items-center gap-2">
+                {index > 0 && <span className="h-px w-6 bg-signal/50" />}
                 <button
                   type="button"
                   onClick={() => goToStep(number)}
-                  className={
-                    "h-auto w-full rounded-panel border px-3 py-2 text-left text-sm " +
-                    (step === number ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg")
-                  }
+                  className={"font-mono text-xs tracking-wide " + (phase === number ? "text-signal" : "text-[#ebe6d6]/70")}
                 >
-                  <span className="font-mono text-xs">{number}</span> {label}
-                  <span className={"mt-1 block text-xs " + (step === number ? "text-ink/80" : "text-muted")}>{hint}</span>
+                  {label}
                 </button>
               </li>
             ))}
           </ol>
-          )}
-          {details && (
-          <nav className="flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Cómo decide">
-            {NAV.map((item) => {
-              const Icon = item.icon;
-              const active = view === item.id;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => setView(item.id)}
-                  className={
-                    "inline-flex h-11 shrink-0 items-center gap-2 rounded-full border px-4 text-sm " +
-                    (active ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg hover:bg-surface-2")
-                  }
-                >
-                  <Icon className="size-4" aria-hidden="true" />
-                  {item.label}
-                </button>
-              );
-            })}
-          </nav>
-          )}
-        </div>
-      </header>
-
-      <div className="mx-auto min-w-0 max-w-6xl px-4 py-6 sm:px-6">
-        <OllamaBar host={ollamaHost} model={ollamaModel} onHost={setOllamaHost} onModel={setOllamaModel} />
-        {modelNote && <p className="mt-3 text-sm text-muted">{modelNote}</p>}
-        <div className="mt-4">
-        {agentOpen ? (
+        )}
+        <div key={scene} className="glass-card mt-5 max-h-[78vh] overflow-auto rounded-panel p-6 sm:p-8">
+        {scene === "agent" ? (
           <AgentBuilder host={ollamaHost} model={ollamaModel} />
         ) : (
           <>
-        {details && view === "scaffold" && <Scaffold />}
         {(!details || view === "mission") && (
-          <section className="grid min-w-0 gap-4 lg:grid-cols-5">
-            <div id="elige" className="flex min-w-0 scroll-mt-28 flex-col gap-4 lg:col-span-2">
-              <div className="rounded-panel border border-line bg-surface p-4">
-                <label htmlFor="project-name" className="text-xs font-medium tracking-wide text-muted">
-                  NOMBRE
-                </label>
-                <input
-                  id="project-name"
-                  value={projectName}
-                  onChange={(event) => setProjectName(event.target.value)}
-                  className="mt-3 h-11 w-full rounded-panel border border-line bg-bg px-3 text-sm text-fg outline-none focus:border-signal"
-                />
-                <p className="mt-2 font-mono text-xs text-muted">proyectos/{slug}</p>
-                <p className="mt-3 text-xs font-medium tracking-wide text-muted">DÓNDE LO VAS A USAR</p>
-                <div className="mt-3 grid grid-cols-2 gap-2">
+          <div>
+            {scene === "where" && (
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight text-fg">¿Dónde vas a usarlo?</h1>
+                <p className="mt-2 text-sm leading-relaxed text-[#ebe6d6]/80">En el ordenador se descarga una carpeta. En el móvil, un archivo para la app.</p>
+                <div className="mt-6 grid grid-cols-2 gap-3">
                   {([
-                    ["computer", "Ordenador", "IDE, código y pruebas"],
-                    ["mobile", "Móvil", "Un archivo por app"],
+                    ["computer", "Ordenador", "Código, pruebas y el editor"],
+                    ["mobile", "Móvil", "Un archivo para pegar o adjuntar"],
                   ] as const).map(([id, label, hint]) => (
                     <button
                       key={id}
@@ -343,22 +236,24 @@ export function Console() {
                       aria-pressed={surface === id}
                       onClick={() => setSurface(id)}
                       className={
-                        "rounded-panel border px-3 py-3 text-left text-sm " +
-                        (surface === id ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
+                        "rounded-panel border px-3 py-5 text-left transition " +
+                        (surface === id ? "border-signal bg-signal text-ink" : "border-line bg-black/30 text-fg hover:border-signal/60")
                       }
                     >
-                      <span className="block font-medium">{label}</span>
-                      <span className={"mt-1 block text-xs " + (surface === id ? "text-ink/80" : "text-muted")}>{hint}</span>
+                      <span className="block text-lg font-medium">{label}</span>
+                      <span className={"mt-1 block text-sm " + (surface === id ? "text-ink/80" : "text-muted")}>{hint}</span>
                     </button>
                   ))}
                 </div>
-                {surface === "computer" ? (
-                  <>
-                <p className="mt-3 text-xs font-medium tracking-wide text-muted">QUÉ VAS A CONSTRUIR</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Es el primer código de tu carpeta, no el plano de control. Elige una sola forma.
-                </p>
-                <div className="mt-3 flex flex-col gap-2">
+                <button type="button" onClick={() => setScene(surface === "mobile" ? "env" : "shape")} className="mt-6 h-12 w-full rounded-panel bg-signal text-sm font-semibold text-ink">
+                  Continuar
+                </button>
+              </div>
+            )}
+            {scene === "shape" && surface === "computer" && (
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">¿Qué vas a construir?</h1>
+                <div className="mt-6 flex flex-col gap-2">
                   {FRAMEWORKS.map((item) => {
                     const active = item.id === framework;
                     return (
@@ -367,238 +262,260 @@ export function Console() {
                         type="button"
                         aria-pressed={active}
                         onClick={() => setFramework(item.id)}
-                        className={
-                          "rounded-panel border px-3 py-3 text-left " +
-                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
-                        }
+                        className={"rounded-panel border px-3 py-3 text-left " + (active ? "border-signal bg-signal text-ink" : "border-line bg-black/30 text-fg")}
                       >
                         <span className="block text-sm font-medium">{item.label}</span>
-                        <span className={"mt-1 block text-sm leading-relaxed " + (active ? "text-ink/85" : "text-muted")}>
-                          {item.fits}
-                        </span>
-                        <span className={"mt-2 block text-xs leading-relaxed " + (active ? "text-ink/75" : "text-fg")}>
-                          {item.result}
-                        </span>
+                        <span className={"mt-1 block text-sm leading-relaxed " + (active ? "text-ink/85" : "text-muted")}>{item.fits}</span>
                       </button>
                     );
                   })}
                 </div>
-                <p className="mt-4 text-xs font-medium tracking-wide text-muted">ENTORNO</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Los que leen el mismo archivo van juntos. AGENTS.md ya viene elegido.
-                </p>
-                <div className="mt-3 flex flex-col gap-2">
-                  {IDE_GROUPS.map((group) => {
-                    const members = group.ides as readonly IdeId[];
-                    const active = members.every((id) => ides.includes(id));
-                    return (
-                      <button
-                        key={group.id}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() =>
-                          setIdes((current) => {
-                            const on = members.every((id) => current.includes(id));
-                            const next = on
-                              ? current.filter((id) => !members.includes(id))
-                              : [...new Set([...current, ...members])];
-                            return next.length > 0 ? next : current;
-                          })
-                        }
-                        className={
-                          "rounded-panel border px-3 py-3 text-left " +
-                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
-                        }
-                      >
-                        <span className="block text-sm font-medium">{group.label}</span>
-                        <span className={"mt-1 block text-sm leading-relaxed " + (active ? "text-ink/85" : "text-muted")}>
-                          {group.members}
-                        </span>
-                        <span className={"mt-1 block font-mono text-xs " + (active ? "text-ink/75" : "text-fg")}>{group.files}</span>
-                      </button>
-                    );
-                  })}
+                <div className="mt-6 flex gap-2">
+                  <button type="button" onClick={() => setScene("where")} className="h-12 flex-1 rounded-panel border border-line text-sm">Atrás</button>
+                  <button type="button" onClick={() => setScene("env")} className="h-12 flex-[2] rounded-panel bg-signal text-sm font-semibold text-ink">Continuar</button>
                 </div>
-                  </>
-                ) : (
-                  <>
-                <p className="mt-4 text-xs font-medium tracking-wide text-muted">APP</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  El teléfono no abre la carpeta ni ejecuta npm. Cada botón de descarga es el archivo de esa app.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {MOBILE_APPS.map((item) => {
-                    const active = mobile.includes(item.id);
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() =>
-                          setMobile((current) =>
-                            current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id],
-                          )
-                        }
-                        className={
-                          "h-11 rounded-full border px-3 text-sm " +
-                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
-                        }
-                      >
-                        {item.label}
-                      </button>
-                    );
-                  })}
-                </div>
-                <ul className="mt-3 flex flex-col gap-1 text-sm leading-relaxed text-muted">
-                  {MOBILE_APPS.filter((item) => mobile.includes(item.id)).map((item) => (
-                    <li key={item.id}>{item.summary}</li>
-                  ))}
-                </ul>
-                  </>
-                )}
               </div>
-              <div className="rounded-panel border border-line bg-surface p-4">
-                <p className="text-xs font-medium tracking-wide text-muted">QUIÉN LO HACE</p>
-                <div className="mt-3 flex flex-col gap-2">
+            )}
+            {scene === "env" && (
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">{surface === "mobile" ? "¿En qué app?" : "¿Con qué programa lo abres?"}</h1>
+                <p className="mt-2 text-sm leading-relaxed text-[#ebe6d6]/80">
+                  {surface === "mobile" ? "Elige una o varias. Cada una descarga su archivo." : "Los que leen el mismo archivo van juntos."}
+                </p>
+                {surface === "computer" ? (
+                  <div className="mt-6 flex flex-col gap-2">
+                    {IDE_GROUPS.map((group) => {
+                      const members = group.ides as readonly IdeId[];
+                      const active = members.every((id) => ides.includes(id));
+                      return (
+                        <button
+                          key={group.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() =>
+                            setIdes((current) => {
+                              const on = members.every((id) => current.includes(id));
+                              const next = on ? current.filter((id) => !members.includes(id)) : [...new Set([...current, ...members])];
+                              return next.length > 0 ? next : current;
+                            })
+                          }
+                          className={"rounded-panel border px-3 py-3 text-left " + (active ? "border-signal bg-signal text-ink" : "border-line bg-black/30 text-fg")}
+                        >
+                          <span className="block text-sm font-medium">{group.label}</span>
+                          <span className={"mt-1 block text-sm " + (active ? "text-ink/80" : "text-muted")}>{group.members}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="mt-6 flex flex-col gap-2">
+                    {MOBILE_APPS.map((item) => {
+                      const active = mobile.includes(item.id);
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          aria-pressed={active}
+                          onClick={() => setMobile((current) => (current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id]))}
+                          className={"rounded-panel border px-3 py-3 text-left " + (active ? "border-signal bg-signal text-ink" : "border-line bg-black/30 text-fg")}
+                        >
+                          <span className="block text-sm font-medium">{item.label}</span>
+                          <span className={"mt-1 block text-sm " + (active ? "text-ink/80" : "text-muted")}>{item.summary}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                <div className="mt-6 flex gap-2">
+                  <button type="button" onClick={() => setScene(surface === "mobile" ? "where" : "shape")} className="h-12 flex-1 rounded-panel border border-line text-sm">Atrás</button>
+                  <button
+                    type="button"
+                    disabled={surface === "mobile" && mobile.length === 0}
+                    onClick={() => setScene("who")}
+                    className="h-12 flex-[2] rounded-panel bg-signal text-sm font-semibold text-ink disabled:opacity-50"
+                  >
+                    Continuar
+                  </button>
+                </div>
+              </div>
+            )}
+            {scene === "who" && (
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">¿Quién lo hace?</h1>
+                <div className="mt-6 flex flex-col gap-2">
                   {PROFILES.map((item) => {
                     const face = PROFILE_FACE[item.id];
                     const active = item.id === profileId;
-                    const names = item.roles
-                      .map((role) => ROLES.find((entry) => entry.role === role)?.name ?? role)
-                      .join(", ");
                     return (
                       <button
                         key={item.id}
                         type="button"
                         aria-pressed={active}
                         onClick={() => setProfileId(item.id)}
-                        className={
-                          "rounded-panel border px-3 py-3 text-left " +
-                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
-                        }
+                        className={"rounded-panel border px-3 py-3 text-left " + (active ? "border-signal bg-signal text-ink" : "border-line bg-black/30 text-fg")}
                       >
                         <span className="block text-sm font-medium">{face?.title ?? item.name}</span>
-                        <span className={"mt-1 block text-sm leading-relaxed " + (active ? "text-ink/85" : "text-muted")}>
-                          {face?.when ?? item.summary}
-                        </span>
-                        {active && <span className={"mt-2 block text-xs leading-relaxed " + (active ? "text-ink/75" : "text-muted")}>{names}</span>}
+                        <span className={"mt-1 block text-sm " + (active ? "text-ink/80" : "text-muted")}>{face?.when ?? item.summary}</span>
                       </button>
                     );
                   })}
                 </div>
+                <div className="mt-6 flex gap-2">
+                  <button type="button" onClick={() => setScene("env")} className="h-12 flex-1 rounded-panel border border-line text-sm">Atrás</button>
+                  <button type="button" onClick={() => setScene("goal")} className="h-12 flex-[2] rounded-panel bg-signal text-sm font-semibold text-ink">Continuar</button>
+                </div>
               </div>
-              <div className="rounded-panel border border-line bg-surface p-4">
-                <label htmlFor="objective" className="text-xs font-medium tracking-wide text-muted">
-                  QUÉ QUIERES CONSEGUIR
-                </label>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Escribe el resultado, para quién es y cómo sabrás que está hecho. Un ejemplo rellena el texto; luego cámbialo.
-                </p>
+            )}
+            {scene === "goal" && (
+              <div>
+                <h1 className="text-3xl font-semibold tracking-tight">¿Qué quieres conseguir?</h1>
+                <p className="mt-2 text-sm leading-relaxed text-[#ebe6d6]/80">El resultado, para quién es y cómo sabrás que está hecho.</p>
+                <label htmlFor="project-name" className="mt-5 block text-xs tracking-wide text-muted">CÓMO SE LLAMA</label>
+                <input id="project-name" value={projectName} onChange={(event) => setProjectName(event.target.value)} className="mt-2 h-12 w-full rounded-panel border border-line bg-black/40 px-3 text-sm outline-none focus:border-signal" />
                 <textarea
                   id="objective"
                   value={objective}
                   onChange={(event) => setObjective(event.target.value)}
-                  rows={6}
-                  placeholder="Ejemplo: una lista de gastos con fecha, concepto e importe. Está hecho cuando añado uno y sigue ahí al recargar."
-                  className="mt-3 w-full resize-y rounded-panel border border-line bg-bg p-3 text-sm leading-relaxed text-fg outline-none placeholder:text-muted focus:border-signal"
+                  rows={5}
+                  placeholder="Una lista de gastos. Está hecho cuando añado uno y sigue ahí al recargar."
+                  className="mt-3 w-full resize-y rounded-panel border border-line bg-black/40 p-3 text-sm leading-relaxed outline-none placeholder:text-muted focus:border-signal"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
-                  {PRESETS.map((preset) => {
-                    const active = preset.objective === objective && preset.profile === profileId;
-                    return (
-                      <button
-                        key={preset.id}
-                        type="button"
-                        aria-pressed={active}
-                        onClick={() => {
-                          setObjective(preset.objective);
-                          setProfileId(preset.profile);
-                        }}
-                        className={
-                          "h-11 rounded-full border px-3 text-sm " +
-                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
-                        }
-                      >
-                        {preset.label}
-                      </button>
-                    );
-                  })}
+                  {PRESETS.map((preset) => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => {
+                        setObjective(preset.objective);
+                        setProfileId(preset.profile);
+                      }}
+                      className="h-10 rounded-full border border-line px-3 text-sm text-fg hover:border-signal"
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => execute()}
-                  disabled={!ready}
-                  className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink disabled:opacity-60"
-                >
-                  <Play className="size-4" aria-hidden="true" />
-                  Preparar mi proyecto
-                </button>
+                <div className="mt-6 flex gap-2">
+                  <button type="button" onClick={() => setScene("who")} className="h-12 flex-1 rounded-panel border border-line text-sm">Atrás</button>
+                  <button type="button" onClick={() => execute()} disabled={!ready} className="h-12 flex-[2] rounded-panel bg-signal text-sm font-semibold text-ink disabled:opacity-50">
+                    Preparar
+                  </button>
+                </div>
                 {error && <p className="mt-3 text-sm text-danger">{error}</p>}
               </div>
-            </div>
-            <div id="descarga" className="flex min-w-0 scroll-mt-28 flex-col gap-4 lg:col-span-3">
-              <MissionDownload
-                report={report}
-                packaging={packaging}
-                note={packageNote}
-                surface={surface}
-                files={
-                  surface === "mobile" && report
-                    ? starterFiles({ name: projectName, objective, framework, ide: [], mobile, surface: "mobile" }).files
-                    : undefined
-                }
-                onDownload={async () => {
-                  if (!report || !profile) return;
-                  setPackaging(true);
-                  setPackageNote(null);
-                  try {
-                    const packed = await buildMissionPackage({
-                      objective,
-                      profileId,
-                      profileName: profile.name,
-                      roles: profile.roles,
-                      report,
-                      projectName,
-                      framework,
-                      ide: surface === "computer" ? ides : [],
-                      mobile: surface === "mobile" ? mobile : [],
-                      expertNote: expertNote ?? undefined,
-                      surface,
-                    });
-                    const url = URL.createObjectURL(packed.blob);
-                    const link = document.createElement("a");
-                    link.href = url;
-                    link.download = packed.filename;
-                    link.click();
-                    URL.revokeObjectURL(url);
-                    setPackageNote(`${packed.filename} · ${packed.fileCount} archivos · ${packed.bytes} bytes`);
-                  } catch (caught) {
-                    setPackageNote(caught instanceof Error ? caught.message : "No se pudo empaquetar.");
-                  } finally {
-                    setPackaging(false);
-                  }
-                }}
-              />
-              <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} surface={surface} />
-              {details && (
-                <>
-                  <ReportSummary report={report} />
-                  <Timeline report={report} />
-                  <Sandbox report={report} />
-                </>
-              )}
-            </div>
-          </section>
+            )}
+            {scene === "download" && (
+              <div id="descarga">
+                <h1 className="text-3xl font-semibold tracking-tight">Tu proyecto está listo</h1>
+                {modelNote && <p className="mt-2 text-sm text-muted">{modelNote}</p>}
+                <div className="mt-4">
+                  <MissionDownload
+                    report={report}
+                    packaging={packaging}
+                    note={packageNote}
+                    surface={surface}
+                    files={
+                      surface === "mobile" && report
+                        ? starterFiles({ name: projectName, objective, framework, ide: [], mobile, surface: "mobile" }).files
+                        : undefined
+                    }
+                    onDownload={async () => {
+                      if (!report || !profile) return;
+                      setPackaging(true);
+                      setPackageNote(null);
+                      try {
+                        const packed = await buildMissionPackage({
+                          objective,
+                          profileId,
+                          profileName: profile.name,
+                          roles: profile.roles,
+                          report,
+                          projectName,
+                          framework,
+                          ide: surface === "computer" ? ides : [],
+                          mobile: surface === "mobile" ? mobile : [],
+                          expertNote: expertNote ?? undefined,
+                          surface,
+                        });
+                        const url = URL.createObjectURL(packed.blob);
+                        const link = document.createElement("a");
+                        link.href = url;
+                        link.download = packed.filename;
+                        link.click();
+                        URL.revokeObjectURL(url);
+                        setPackageNote(`${packed.filename} · ${packed.fileCount} archivos · ${packed.bytes} bytes`);
+                      } catch (caught) {
+                        setPackageNote(caught instanceof Error ? caught.message : "No se pudo empaquetar.");
+                      } finally {
+                        setPackaging(false);
+                      }
+                    }}
+                  />
+                </div>
+                <div className="mt-4">
+                  <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} surface={surface} />
+                </div>
+                <button type="button" onClick={() => setScene("goal")} className="mt-4 text-sm text-muted underline-offset-2 hover:underline">
+                  Cambiar el texto
+                </button>
+              </div>
+            )}
+          </div>
         )}
-        {details && view === "graph" && <Graph report={report} onRun={() => execute()} />}
-        {details && view === "agents" && <Agents profileRoles={profile?.roles ?? []} />}
-        {details && view === "policy" && <Policy rules={rules} />}
-        {details && view === "contracts" && <Contracts />}
-        {details && view === "architecture" && <Architecture />}
           </>
         )}
         </div>
-      </div>
+        <div className="mt-5 flex flex-col gap-2 text-sm">
+          {scene === "agent" ? (
+            <button type="button" onClick={() => setScene("where")} className="text-left text-[#ebe6d6]/80 underline-offset-2 hover:underline">
+              Volver al proyecto
+            </button>
+          ) : (
+            <button type="button" onClick={() => { setDetails(false); setScene("agent"); }} className="text-left text-[#ebe6d6]/80 underline-offset-2 hover:underline">
+              Quiero un agente, no un proyecto
+            </button>
+          )}
+          {scene === "download" && (
+            <button type="button" onClick={() => { setDetails(true); setView("graph"); }} className="text-left text-muted underline-offset-2 hover:underline">
+              Ver el razonamiento. Muestra los pasos, las reglas y quién hizo cada parte.
+            </button>
+          )}
+          <button type="button" onClick={() => { setDetails(true); setView("scaffold"); setScene("where"); }} className="text-left text-muted underline-offset-2 hover:underline">
+            Descargar la carpeta base, sin este proyecto
+          </button>
+        </div>
+        <div className="mt-4">
+          <OllamaBar host={ollamaHost} model={ollamaModel} onHost={setOllamaHost} onModel={setOllamaModel} />
+        </div>
+        {details && scene !== "agent" && (
+          <div className="mt-4 max-h-80 overflow-auto rounded-panel border border-line bg-black/50 p-3">
+            <nav className="flex gap-2 overflow-x-auto pb-2" aria-label="Razonamiento">
+              {NAV.map((item) => {
+                const Icon = item.icon;
+                const active = view === item.id;
+                return (
+                  <button key={item.id} type="button" onClick={() => setView(item.id)} className={"inline-flex h-10 shrink-0 items-center gap-2 rounded-full border px-3 text-sm " + (active ? "border-signal bg-signal text-ink" : "border-line text-fg")}>
+                    <Icon className="size-4" aria-hidden="true" />
+                    {item.label}
+                  </button>
+                );
+              })}
+            </nav>
+            {view === "scaffold" && <Scaffold />}
+            {view === "graph" && <Graph report={report} onRun={() => execute()} />}
+            {view === "agents" && <Agents profileRoles={profile?.roles ?? []} />}
+            {view === "policy" && <Policy rules={rules} />}
+            {view === "contracts" && <Contracts />}
+            {view === "architecture" && <Architecture />}
+            {view === "mission" && (
+              <>
+                <ReportSummary report={report} />
+                <Timeline report={report} />
+                <Sandbox report={report} />
+              </>
+            )}
+          </div>
+        )}
       </div>
     </main>
   );

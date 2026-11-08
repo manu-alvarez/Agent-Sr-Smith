@@ -2,7 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { CAPABILITIES, PHASE_ORDER, ROLES } from "../../../dsh-superagent-xlevel/src/public.ts";
 import { strToU8, zipSync } from "fflate";
-import { agentFiles, agentSystem, fullSelection, SKILLS, STRATEGIES, TOOLS, type AgentMode, type AgentSelection } from "../../lib/agent-export";
+import { agentFiles, agentSystem, CAPACITIES, fullSelection, SKILLS, STRATEGIES, TOOLS, type AgentMode, type AgentSelection } from "../../lib/agent-export";
 import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
 
 export function AgentBuilder({ host, model }: { host: string; model: string }) {
@@ -45,7 +45,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             >
               <span className="block font-medium">Full</span>
               <span className={"mt-1 block text-xs leading-relaxed " + (kind === "full" ? "text-ink/80" : "text-muted")}>
-                {ROLES.length} roles, {STRATEGIES.length} instrucciones, {SKILLS.length} skills, {TOOLS.length} herramientas. Acceso total.
+                {ROLES.length} roles, {STRATEGIES.length} habilidades, {CAPACITIES.length} capacidades, {SKILLS.length} skills, {TOOLS.length} herramientas. Acceso total.
               </span>
             </button>
             <button
@@ -65,7 +65,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
           </div>
         </div>
         <fieldset disabled={kind === "full"} className="flex flex-col gap-4 disabled:opacity-60">
-          <ChoiceGroup title="Instrucciones">
+          <ChoiceGroup title="Habilidades">
             {STRATEGIES.map((item) => (
               <Toggle
                 key={item.id}
@@ -82,6 +82,16 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
                 label={item.name}
                 pressed={selection.skills.includes(item.id)}
                 onClick={() => setCustom({ ...custom, skills: toggle(custom.skills, item.id) })}
+              />
+            ))}
+          </ChoiceGroup>
+          <ChoiceGroup title="Capacidades">
+            {CAPACITIES.map((item) => (
+              <Toggle
+                key={item.id}
+                label={item.name}
+                pressed={selection.capacities.includes(item.id)}
+                onClick={() => setCustom({ ...custom, capacities: toggle(custom.capacities, item.id) })}
               />
             ))}
           </ChoiceGroup>

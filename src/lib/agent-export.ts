@@ -15,6 +15,7 @@ export interface AgentSelection {
   providers: string[];
   strategies: string[];
   skills: string[];
+  capacities: string[];
   mode: AgentMode;
   limits: { maxSteps: number; maxParallel: number; timeoutMs: number };
 }
@@ -50,6 +51,46 @@ export const STRATEGIES: Array<{ id: string; name: string; instruction: string }
     id: "recovery",
     name: "Recuperación",
     instruction: "Si falla una acción: reintento si queda presupuesto y es idempotente; si no, replan, rollback o escalado. No repitas un borrado.",
+  },
+  {
+    id: "priorizar",
+    name: "Priorizar",
+    instruction: "Si hay varias cosas, haz primero la que desbloquea al resto. Di cuál dejas para después y por qué.",
+  },
+  {
+    id: "contrastar",
+    name: "Contrastar",
+    instruction: "Pon juntas dos fuentes o dos opciones. Qué coincide, qué no, y cuál usas.",
+  },
+  {
+    id: "estimar",
+    name: "Estimar",
+    instruction: "Di qué cuesta en pasos, archivos y pruebas. Si no lo sabes, dilo en vez de inventar un número.",
+  },
+  {
+    id: "explicar",
+    name: "Explicar",
+    instruction: "Cuéntalo como a alguien que abre el proyecto por primera vez. Una frase por idea. Sin jerga si hay una palabra normal.",
+  },
+  {
+    id: "preguntar",
+    name: "Preguntar",
+    instruction: "Si falta un dato que cambia el resultado, pregunta una sola cosa. No sigas inventando.",
+  },
+  {
+    id: "resumir",
+    name: "Resumir",
+    instruction: "Cierra con qué quedó hecho, qué falta y cómo se comprueba.",
+  },
+  {
+    id: "criticar",
+    name: "Criticar",
+    instruction: "Señala el fallo concreto del plan o del código. Propón el cambio mínimo. No critiques el estilo sin un efecto.",
+  },
+  {
+    id: "decidir",
+    name: "Decidir",
+    instruction: "Elige una opción, escribe el motivo y qué tendrías que ver para cambiar de idea.",
   },
 ];
 
@@ -106,6 +147,45 @@ export const SKILLS: Array<{ id: string; name: string; instruction: string }> = 
     name: "seguridad",
     instruction: "Señala permisos, datos sensibles y el fallo concreto. No des un exploit ni pidas desactivar una salvaguarda.",
   },
+  { id: "refactor", name: "Refactor", instruction: "Cambia la forma del código sin cambiar lo que hace. La prueba de antes y la de después tienen que pasar." },
+  { id: "migracion", name: "Migración", instruction: "Mueve datos o código de un sitio a otro. Primero copia, comprueba, y solo luego retira lo viejo." },
+  { id: "dependencias", name: "Dependencias", instruction: "No añadas un paquete si el proyecto ya resuelve eso. Si lo añades, di para qué y cómo se comprueba." },
+  { id: "logs", name: "Logs", instruction: "Lee el error real. Cita la línea. No adivines la causa si el mensaje dice otra cosa." },
+  { id: "rendimiento", name: "Rendimiento", instruction: "Mide antes de cambiar. Di qué era lento, qué mediste y cuánto bajó." },
+  { id: "accesibilidad", name: "Accesibilidad", instruction: "Comprueba teclado, nombres de botones y contraste. Un control que no se puede usar sin ratón no está terminado." },
+  { id: "despliegue", name: "Despliegue", instruction: "Escribe los comandos para poner el proyecto en marcha en la máquina indicada. No publiques secretos." },
+  { id: "base-datos", name: "Base de datos", instruction: "Describe tablas, campos y cómo se migra. No borres datos para que cuadre un esquema." },
+  { id: "autenticacion", name: "Autenticación", instruction: "Di quién entra, qué puede hacer y dónde vive la sesión. No dejes una contraseña en el código." },
+  { id: "errores", name: "Errores", instruction: "Cada fallo visible dice qué pasó y qué puede hacer la persona. No ocultes el error para que la pantalla quede verde." },
+  { id: "interfaz", name: "Interfaz", instruction: "Una acción principal por pantalla. El texto dice qué pasa si se pulsa. No añadas un control que no tiene destino." },
+  { id: "prompts", name: "Prompts", instruction: "Escribe la instrucción que usará el modelo: objetivo, límites y cómo se ve el resultado. Guárdala en un archivo." },
+  { id: "evaluacion", name: "Evaluación", instruction: "Define casos de sí y de no. Un caso pasa solo con evidencia, no porque el texto suene bien." },
+  { id: "andamio", name: "Andamio", instruction: "Crea la carpeta mínima que ya se puede instalar, probar y arrancar. No dejes un archivo vacío que el programa necesite." },
+  { id: "idiomas", name: "Idiomas", instruction: "Separa los textos de la interfaz. No hardcodees una frase en medio de la lógica si va a traducirse." },
+  { id: "observacion", name: "Observación", instruction: "Deja una forma de ver si el proceso está vivo: un log, un /health o una prueba. Sin eso no hay cierre." },
+  { id: "cola", name: "Cola", instruction: "Si hay trabajos en segundo plano, di qué se encola, qué pasa si falla y cómo se reintenta una sola vez." },
+  { id: "contrato", name: "Contrato", instruction: "Escribe entradas, salidas y errores de la función o la ruta antes de implementarla. El código tiene que coincidir con ese texto." },
+];
+
+export const CAPACITIES: Array<{ id: string; name: string; instruction: string }> = [
+  { id: "codigo", name: "Código", instruction: "Lee y escribe archivos del proyecto." },
+  { id: "terminal", name: "Terminal", instruction: "Ejecuta comandos en la carpeta y lee la salida." },
+  { id: "git", name: "Git", instruction: "Ve cambios y puede crear un commit local." },
+  { id: "red", name: "Red", instruction: "Abre direcciones y llama a servicios." },
+  { id: "navegador", name: "Navegador", instruction: "Abre una página y lee lo que se ve." },
+  { id: "apis", name: "APIs", instruction: "Llama a una ruta y guarda el estado y el cuerpo." },
+  { id: "datos", name: "Datos", instruction: "Lee tablas, CSV y JSON y no inventa celdas." },
+  { id: "documentos", name: "Documentos", instruction: "Escribe y actualiza la documentación para que coincida con el programa." },
+  { id: "pruebas", name: "Pruebas", instruction: "Crea y ejecuta pruebas." },
+  { id: "memoria", name: "Memoria", instruction: "Guarda y lee notas de esta tarea." },
+  { id: "conocimiento", name: "Conocimiento", instruction: "Busca en los documentos del proyecto y cita el pasaje." },
+  { id: "seguridad", name: "Seguridad", instruction: "Revisa permisos y datos sensibles sin explotarlos." },
+  { id: "despliegue", name: "Puesta en marcha", instruction: "Deja los comandos para instalar, probar y arrancar." },
+  { id: "diseno", name: "Diseño", instruction: "Propone la pantalla o el comando con una sola acción principal." },
+  { id: "refactor", name: "Reordenar código", instruction: "Mejora la estructura sin cambiar el resultado." },
+  { id: "observacion", name: "Ver si está vivo", instruction: "Añade una comprobación de salud o un log útil." },
+  { id: "voz", name: "Explicar en voz alta", instruction: "Resume el estado en frases cortas que se puedan leer en alto." },
+  { id: "archivos", name: "Archivos", instruction: "Busca, mueve y nombra archivos sin salir de la carpeta." },
 ];
 
 export const TOOLS: Array<{ name: string; description: string }> = [
@@ -132,6 +212,7 @@ export function fullSelection(): AgentSelection {
     providers: CAPABILITIES.map((item) => item.provider),
     strategies: STRATEGIES.map((item) => item.id),
     skills: SKILLS.map((item) => item.id),
+    capacities: CAPACITIES.map((item) => item.id),
     mode: "full-access",
     limits: { ...AGENT_LIMITS },
   };
@@ -154,6 +235,7 @@ export function clampSelection(input: AgentSelection): AgentSelection {
     providers: uniqueKnown(input.providers, CAPABILITIES.map((item) => item.provider)),
     strategies: uniqueKnown(input.strategies, STRATEGIES.map((item) => item.id)),
     skills: uniqueKnown(input.skills, SKILLS.map((item) => item.id)),
+    capacities: uniqueKnown(input.capacities ?? [], CAPACITIES.map((item) => item.id)),
     mode: input.mode === "full-access" || input.mode === "local-runtime" ? input.mode : "strict-local",
     limits,
   };
@@ -197,10 +279,12 @@ export function agentSystem(selection: AgentSelection): string {
   const providers = CAPABILITIES.filter((item) => chosen.providers.includes(item.provider));
   const strategies = STRATEGIES.filter((item) => chosen.strategies.includes(item.id));
   const skills = SKILLS.filter((item) => chosen.skills.includes(item.id));
+  const capacities = CAPACITIES.filter((item) => chosen.capacities.includes(item.id));
   const roleLines = roles.map((item) => `- ${item.name} (${item.role}): ${item.mission}`).join("\n");
   const toolLines = tools.map((item) => `- ${item.name}: ${item.description}`).join("\n");
   const strategyLines = strategies.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
   const skillLines = skills.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
+  const capacityLines = capacities.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
   const autonomy = policyRules(chosen.mode)
     .map((rule) => `- ${rule.effect} ${rule.operation}: ${rule.reason}`)
     .join("\n");
@@ -232,8 +316,11 @@ Política ${DEFAULT_POLICY.id} (${DEFAULT_POLICY.name}). Sin regla, se deniega.
 ${autonomy}
 ${access}
 
-## Instrucciones
+## Habilidades
 ${strategyLines || "- Ninguna."}
+
+## Capacidades
+${capacityLines || "- Ninguna."}
 
 ## Roles
 ${roleLines || "- Ninguno."}
@@ -277,7 +364,8 @@ export function agentCode(selection: AgentSelection): string {
     chosen.tools.length === TOOLS.length &&
     chosen.providers.length === CAPABILITIES.length &&
     chosen.strategies.length === STRATEGIES.length &&
-    chosen.skills.length === SKILLS.length;
+    chosen.skills.length === SKILLS.length &&
+    chosen.capacities.length === CAPACITIES.length;
   const document = {
     schemaVersion: "1.0.0",
     id: complete ? "sr-smith-full" : "sr-smith-custom",
@@ -292,6 +380,7 @@ export function agentCode(selection: AgentSelection): string {
     phases: PHASE_ORDER,
     strategies: STRATEGIES.filter((item) => chosen.strategies.includes(item.id)).map((item) => item.id),
     skills: SKILLS.filter((item) => chosen.skills.includes(item.id)).map((item) => item.id),
+    capacities: CAPACITIES.filter((item) => chosen.capacities.includes(item.id)).map((item) => item.id),
     providers: CAPABILITIES.filter((item) => chosen.providers.includes(item.provider)).map((item) => ({
       provider: item.provider,
       modelId: item.modelId,
@@ -360,6 +449,9 @@ export function agentFiles(selection: AgentSelection, draft?: string): Record<st
   }
   for (const skill of SKILLS.filter((item) => chosen.skills.includes(item.id))) {
     files[`skills/${skill.id}/SKILL.md`] = `---\nname: ${skill.id}\ndescription: ${skill.instruction.slice(0, 180)}\n---\n\n${skill.instruction}\n`;
+  }
+  for (const capacity of CAPACITIES.filter((item) => chosen.capacities.includes(item.id))) {
+    files[`capacidades/${capacity.id}.md`] = `# ${capacity.name}\n\n${capacity.instruction}\n`;
   }
   for (const tool of TOOLS.filter((item) => chosen.tools.includes(item.name))) {
     files[`tools/${tool.name}.json`] = JSON.stringify({ name: tool.name, description: tool.description }, null, 2) + "\n";
