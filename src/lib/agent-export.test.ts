@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { CAPABILITIES, NATIVE_TOOLS, ROLES } from "../../dsh-superagent-xlevel/src/public.ts";
-import { agentCode, agentFiles, clampSelection, fullSelection } from "./agent-export.ts";
+import { CAPABILITIES, ROLES } from "../../dsh-superagent-xlevel/src/public.ts";
+import { agentCode, agentFiles, clampSelection, fullSelection, SKILLS, TOOLS } from "./agent-export.ts";
 
 test("Full incluye cada rol, herramienta y proveedor que existe", () => {
   const code = JSON.parse(agentCode(fullSelection())) as {
@@ -11,6 +11,7 @@ test("Full incluye cada rol, herramienta y proveedor que existe", () => {
     providers: Array<{ provider: string }>;
     strategies: string[];
     skills: string[];
+    mode: string;
     system: string;
   };
   assert.equal(code.id, "sr-smith-full");
@@ -18,16 +19,17 @@ test("Full incluye cada rol, herramienta y proveedor que existe", () => {
     code.roles.map((item) => item.id),
     ROLES.map((item) => item.role),
   );
-  assert.deepEqual(code.tools, NATIVE_TOOLS.map((item) => item.name));
+  assert.deepEqual(code.tools, TOOLS.map((item) => item.name));
   assert.deepEqual(
     code.providers.map((item) => item.provider),
     CAPABILITIES.map((item) => item.provider),
   );
   assert.equal(code.strategies.length, 6);
-  assert.deepEqual(code.skills, ["review"]);
-  assert.match(code.system, /pol_default_autonomy/);
+  assert.equal(code.skills.length, SKILLS.length);
+  assert.equal(code.mode, "full-access");
+  assert.match(code.system, /acceso total/i);
+  assert.match(code.system, /navegador/);
   assert.match(code.system, /Orchestrator/);
-  assert.match(code.system, /run-review.py/);
   assert.match(code.system, /gemma4:latest/);
 });
 
@@ -42,7 +44,7 @@ test("Personalizada no puede pasar del techo de Full ni inventar ids", () => {
     limits: { maxSteps: 10_000, maxParallel: 0, timeoutMs: 10 },
   });
   assert.deepEqual(clamped.roles, ["developer"]);
-  assert.deepEqual(clamped.tools, ["workspace.read"]);
+  assert.deepEqual(clamped.tools, ["workspace.read", "shell.exec"]);
   assert.deepEqual(clamped.providers, ["ollama"]);
   assert.deepEqual(clamped.strategies, ["planning"]);
   assert.deepEqual(clamped.skills, ["review"]);
@@ -61,7 +63,9 @@ test("el paquete del agente separa skills, agentes y el índice", () => {
   assert.match(files["AGENTE.md"] ?? "", /gemma4:latest/);
   assert.ok(files["agents/orchestrator.md"]);
   assert.ok(files["skills/review/SKILL.md"]);
-  assert.ok(files["skills/planning/SKILL.md"]);
+  assert.ok(files["skills/navegador/SKILL.md"]);
+  assert.ok(files["tools/browser.open.json"]);
+  assert.match(files["policy.json"] ?? "", /full-access|network/);
   assert.ok(files["knowledge.json"]);
   assert.match(files["INDEX.md"] ?? "", /AGENTE.md/);
 });

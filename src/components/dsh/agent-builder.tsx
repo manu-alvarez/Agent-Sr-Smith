@@ -1,8 +1,8 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Copy } from "lucide-react";
-import { CAPABILITIES, NATIVE_TOOLS, PHASE_ORDER, ROLES } from "../../../dsh-superagent-xlevel/src/public.ts";
+import { CAPABILITIES, PHASE_ORDER, ROLES } from "../../../dsh-superagent-xlevel/src/public.ts";
 import { strToU8, zipSync } from "fflate";
-import { agentFiles, agentSystem, fullSelection, SKILLS, STRATEGIES, type AgentMode, type AgentSelection } from "../../lib/agent-export";
+import { agentFiles, agentSystem, fullSelection, SKILLS, STRATEGIES, TOOLS, type AgentMode, type AgentSelection } from "../../lib/agent-export";
 import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
 
 export function AgentBuilder({ host, model }: { host: string; model: string }) {
@@ -45,7 +45,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             >
               <span className="block font-medium">Full</span>
               <span className={"mt-1 block text-xs leading-relaxed " + (kind === "full" ? "text-ink/80" : "text-muted")}>
-                {ROLES.length} roles, {STRATEGIES.length} instrucciones, {SKILLS.length} skill, {NATIVE_TOOLS.length} herramientas.
+                {ROLES.length} roles, {STRATEGIES.length} instrucciones, {SKILLS.length} skills, {TOOLS.length} herramientas. Acceso total.
               </span>
             </button>
             <button
@@ -96,7 +96,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             ))}
           </ChoiceGroup>
           <ChoiceGroup title="Herramientas">
-            {NATIVE_TOOLS.map((item) => (
+            {TOOLS.map((item) => (
               <Toggle
                 key={item.name}
                 label={item.name}
@@ -118,17 +118,23 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
           <div className="rounded-panel border border-line bg-surface p-4">
             <p className="text-xs font-medium tracking-wide text-muted">MODO</p>
             <div className="mt-3 flex flex-wrap gap-2">
-              {(["strict-local", "local-runtime"] as AgentMode[]).map((mode) => (
+              {(
+                [
+                  ["full-access", "Acceso total"],
+                  ["local-runtime", "Red con permiso"],
+                  ["strict-local", "Sin red"],
+                ] as const
+              ).map(([mode, label]) => (
                 <Toggle
                   key={mode}
-                  label={mode}
+                  label={label}
                   pressed={selection.mode === mode}
                   onClick={() => setCustom({ ...custom, mode })}
                 />
               ))}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted">
-              strict-local deniega la red. local-runtime la deja solo con aprobación. La política es Autonomía gobernada y no hay otra.
+              Acceso total usa ficheros, terminal, git, red, navegador y APIs sin preguntar en cada paso. No guarda claves ni borra fuera del proyecto. Los otros dos modos sí preguntan o cortan la red.
             </p>
           </div>
           <div className="rounded-panel border border-line bg-surface p-4">

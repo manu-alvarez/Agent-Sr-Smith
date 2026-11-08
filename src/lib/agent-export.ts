@@ -7,7 +7,7 @@ import {
   ROLES,
 } from "../../dsh-superagent-xlevel/src/public.ts";
 
-export type AgentMode = "strict-local" | "local-runtime";
+export type AgentMode = "full-access" | "local-runtime" | "strict-local";
 
 export interface AgentSelection {
   roles: string[];
@@ -53,14 +53,72 @@ export const STRATEGIES: Array<{ id: string; name: string; instruction: string }
   },
 ];
 
-/** El único paquete Agent Skill del repositorio. */
+/** El único paquete Agent Skill del repositorio, más los procedimientos que el paquete sí puede escribir. */
 export const SKILLS: Array<{ id: string; name: string; instruction: string }> = [
   {
     id: "review",
     name: "review",
     instruction:
-      "Antes de cerrar un cambio de contratos, prompts, perfiles o política: lee el diff, ejecuta python3 .agents/skills/review/scripts/run-review.py, npm test y npx tsc --noEmit, y rellena el informe. No reescribas un fallo para que quede en verde. No apruebes sola un proveedor ni una política.",
+      "Antes de cerrar un cambio: lee el diff, ejecuta las pruebas y el typecheck, y rellena el informe. No reescribas un fallo para que quede en verde.",
   },
+  {
+    id: "git",
+    name: "git",
+    instruction: "Mira status y diff. Propón un commit con el porqué. En acceso total puedes crearlo. No reescribas historia publicada.",
+  },
+  {
+    id: "pruebas",
+    name: "pruebas",
+    instruction: "Escribe la prueba que falla, luego el cambio mínimo, y vuelve a ejecutarla. Sin la segunda pasada no hay cierre.",
+  },
+  {
+    id: "api",
+    name: "api",
+    instruction: "Lee el contrato, llama al método y la ruta pedidos y guarda estado, cuerpo y error. No copies tokens al repositorio.",
+  },
+  {
+    id: "navegador",
+    name: "navegador",
+    instruction: "Abre la URL, lee lo visible, resume con la cita de esa URL y para. No envíes credenciales ni completes un pago.",
+  },
+  {
+    id: "datos",
+    name: "datos",
+    instruction: "Lee CSV o JSON local, cuenta filas, nombra columnas y deja el cálculo repetible. No inventes celdas que no están.",
+  },
+  {
+    id: "documentar",
+    name: "documentar",
+    instruction: "Escribe solo lo que el código hace ahora: comandos, entradas y salidas. Borra la frase que el programa no cumple.",
+  },
+  {
+    id: "mcp",
+    name: "mcp",
+    instruction: "Declara el servidor en mcp.json con el comando de arranque y la lista de tools. Sin URL secreta ni clave.",
+  },
+  {
+    id: "memoria",
+    name: "memoria",
+    instruction: "Antes de decidir, lee las notas de esta tarea. Al cerrar, guarda la decisión y el motivo en una nota corta.",
+  },
+  {
+    id: "seguridad",
+    name: "seguridad",
+    instruction: "Señala permisos, datos sensibles y el fallo concreto. No des un exploit ni pidas desactivar una salvaguarda.",
+  },
+];
+
+export const TOOLS: Array<{ name: string; description: string }> = [
+  ...NATIVE_TOOLS.map((item) => ({ name: item.name, description: item.description })),
+  { name: "shell.exec", description: "Ejecuta un comando en la carpeta del proyecto y devuelve salida y código." },
+  { name: "git.status", description: "Lista los cambios locales sin publicarlos." },
+  { name: "git.diff", description: "Muestra el diff del trabajo actual." },
+  { name: "git.commit", description: "Crea un commit local con el mensaje indicado." },
+  { name: "http.request", description: "Hace una petición HTTP y devuelve estado y cuerpo." },
+  { name: "web.fetch", description: "Descarga el texto de una URL pública." },
+  { name: "browser.open", description: "Abre una página y lee el contenido visible." },
+  { name: "file.search", description: "Busca un texto en los archivos del proyecto." },
+  { name: "table.read", description: "Lee un CSV o JSON local y resume columnas y filas." },
 ];
 
 const fullProfile = PROFILES.find((item) => item.id === "full") ?? PROFILES[0]!;
@@ -70,11 +128,11 @@ export const AGENT_LIMITS = fullProfile.limits;
 export function fullSelection(): AgentSelection {
   return {
     roles: ROLES.map((item) => item.role),
-    tools: NATIVE_TOOLS.map((item) => item.name),
+    tools: TOOLS.map((item) => item.name),
     providers: CAPABILITIES.map((item) => item.provider),
     strategies: STRATEGIES.map((item) => item.id),
     skills: SKILLS.map((item) => item.id),
-    mode: "strict-local",
+    mode: "full-access",
     limits: { ...AGENT_LIMITS },
   };
 }
@@ -92,11 +150,11 @@ export function clampSelection(input: AgentSelection): AgentSelection {
   };
   return {
     roles: uniqueKnown(input.roles, ROLES.map((item) => item.role)),
-    tools: uniqueKnown(input.tools, NATIVE_TOOLS.map((item) => item.name)),
+    tools: uniqueKnown(input.tools, TOOLS.map((item) => item.name)),
     providers: uniqueKnown(input.providers, CAPABILITIES.map((item) => item.provider)),
     strategies: uniqueKnown(input.strategies, STRATEGIES.map((item) => item.id)),
     skills: uniqueKnown(input.skills, SKILLS.map((item) => item.id)),
-    mode: input.mode === "local-runtime" ? "local-runtime" : "strict-local",
+    mode: input.mode === "full-access" || input.mode === "local-runtime" ? input.mode : "strict-local",
     limits,
   };
 }
@@ -106,10 +164,36 @@ function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, Math.round(value)));
 }
 
+export function policyRules(mode: AgentMode): Array<{ operation: string; effect: string; reason: string }> {
+  if (mode === "full-access") {
+    return [
+      { operation: "analyze", effect: "allow", reason: "Puede analizar sin preguntar." },
+      { operation: "sandbox-read", effect: "allow", reason: "Puede leer el proyecto." },
+      { operation: "sandbox-write", effect: "allow", reason: "Puede escribir en el proyecto." },
+      { operation: "shell", effect: "allow", reason: "Puede ejecutar comandos en la carpeta." },
+      { operation: "git-write", effect: "allow", reason: "Puede crear commits locales." },
+      { operation: "network", effect: "allow", reason: "Puede usar la red." },
+      { operation: "browser", effect: "allow", reason: "Puede abrir páginas y leer lo visible." },
+      { operation: "http", effect: "allow", reason: "Puede llamar APIs." },
+      { operation: "test", effect: "allow", reason: "Puede lanzar pruebas." },
+      { operation: "production-change", effect: "allow", reason: "Puede aplicar el cambio que el objetivo pida en el entorno indicado." },
+      { operation: "secrets", effect: "deny", reason: "No escribe claves en prompts, logs ni en el repositorio." },
+      { operation: "external-delete", effect: "deny", reason: "No borra fuera de la carpeta del proyecto." },
+    ];
+  }
+  return DEFAULT_POLICY.rules
+    .filter((rule) => !rule.modes || rule.modes.includes(mode))
+    .map((rule) => ({
+      operation: rule.operation,
+      effect: rule.effect === "require-approval" ? "ask" : rule.effect,
+      reason: rule.reason,
+    }));
+}
+
 export function agentSystem(selection: AgentSelection): string {
   const chosen = clampSelection(selection);
   const roles = ROLES.filter((item) => chosen.roles.includes(item.role));
-  const tools = NATIVE_TOOLS.filter((item) => chosen.tools.includes(item.name));
+  const tools = TOOLS.filter((item) => chosen.tools.includes(item.name));
   const providers = CAPABILITIES.filter((item) => chosen.providers.includes(item.provider));
   const strategies = STRATEGIES.filter((item) => chosen.strategies.includes(item.id));
   const skills = SKILLS.filter((item) => chosen.skills.includes(item.id));
@@ -117,10 +201,15 @@ export function agentSystem(selection: AgentSelection): string {
   const toolLines = tools.map((item) => `- ${item.name}: ${item.description}`).join("\n");
   const strategyLines = strategies.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
   const skillLines = skills.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
-  const autonomy = DEFAULT_POLICY.rules
-    .filter((rule) => !rule.modes || rule.modes.includes(chosen.mode))
+  const autonomy = policyRules(chosen.mode)
     .map((rule) => `- ${rule.effect} ${rule.operation}: ${rule.reason}`)
     .join("\n");
+  const access =
+    chosen.mode === "full-access"
+      ? "Modo acceso total: usa las herramientas declaradas en esta máquina sin pedir permiso en cada paso."
+      : chosen.mode === "strict-local"
+        ? "Modo sin red: no sale de la carpeta."
+        : "Modo con red bajo permiso: la red se abre solo cuando se aprueba.";
   const memory = chosen.tools.includes("memory.recall") || chosen.tools.includes("memory.remember");
   const knowledge = chosen.tools.includes("knowledge.search");
   const providerLines = providers
@@ -141,7 +230,7 @@ ${strategies.find((item) => item.id === "debugging")?.instruction ?? ""}
 ## Barandillas y autonomía
 Política ${DEFAULT_POLICY.id} (${DEFAULT_POLICY.name}). Sin regla, se deniega.
 ${autonomy}
-${chosen.mode === "strict-local" ? "La red está denegada." : "La red solo se abre con aprobación y un adaptador configurado."}
+${access}
 
 ## Instrucciones
 ${strategyLines || "- Ninguna."}
@@ -185,7 +274,7 @@ export function agentCode(selection: AgentSelection): string {
   }));
   const complete =
     chosen.roles.length === ROLES.length &&
-    chosen.tools.length === NATIVE_TOOLS.length &&
+    chosen.tools.length === TOOLS.length &&
     chosen.providers.length === CAPABILITIES.length &&
     chosen.strategies.length === STRATEGIES.length &&
     chosen.skills.length === SKILLS.length;
@@ -197,9 +286,7 @@ export function agentCode(selection: AgentSelection): string {
     policy: {
       id: DEFAULT_POLICY.id,
       name: DEFAULT_POLICY.name,
-      rules: DEFAULT_POLICY.rules
-        .filter((rule) => !rule.modes || rule.modes.includes(chosen.mode))
-        .map((rule) => ({ operation: rule.operation, effect: rule.effect, reason: rule.reason })),
+      rules: policyRules(chosen.mode),
     },
     limits: chosen.limits,
     phases: PHASE_ORDER,
@@ -210,7 +297,7 @@ export function agentCode(selection: AgentSelection): string {
       modelId: item.modelId,
       verified: item.verified !== null,
     })),
-    tools: NATIVE_TOOLS.filter((item) => chosen.tools.includes(item.name)).map((item) => item.name),
+    tools: TOOLS.filter((item) => chosen.tools.includes(item.name)).map((item) => item.name),
     roles,
     system: agentSystem(chosen),
     model: "ollama/gemma4:latest",
@@ -230,9 +317,7 @@ export function agentFiles(selection: AgentSelection, draft?: string): Record<st
     "policy.json": JSON.stringify(
       {
         id: DEFAULT_POLICY.id,
-        rules: DEFAULT_POLICY.rules
-          .filter((rule) => !rule.modes || rule.modes.includes(chosen.mode))
-          .map((rule) => ({ operation: rule.operation, effect: rule.effect === "require-approval" ? "ask" : rule.effect, reason: rule.reason })),
+        rules: policyRules(chosen.mode),
       },
       null,
       2,
@@ -276,7 +361,7 @@ export function agentFiles(selection: AgentSelection, draft?: string): Record<st
   for (const skill of SKILLS.filter((item) => chosen.skills.includes(item.id))) {
     files[`skills/${skill.id}/SKILL.md`] = `---\nname: ${skill.id}\ndescription: ${skill.instruction.slice(0, 180)}\n---\n\n${skill.instruction}\n`;
   }
-  for (const tool of NATIVE_TOOLS.filter((item) => chosen.tools.includes(item.name))) {
+  for (const tool of TOOLS.filter((item) => chosen.tools.includes(item.name))) {
     files[`tools/${tool.name}.json`] = JSON.stringify({ name: tool.name, description: tool.description }, null, 2) + "\n";
   }
   if (draft?.trim()) files["DESDE-OLLAMA.md"] = `# Redactado por el modelo\n\n${draft.trim()}\n`;
