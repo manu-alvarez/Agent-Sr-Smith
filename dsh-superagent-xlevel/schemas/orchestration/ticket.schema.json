@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:orchestration:ticket:1.0.0",
+  "title": "Ticket",
+  "description": "Unidad de entrada humana o de un trigger. No ejecuta trabajo: apunta a tareas.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id del ticket.",
+      "minLength": 1
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Proyecto.",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "description": "Título.",
+      "minLength": 1
+    },
+    "body": {
+      "type": "string",
+      "description": "Cuerpo. No pegar secretos."
+    },
+    "status": {
+      "description": "Ciclo del ticket.",
+      "enum": [
+        "open",
+        "assigned",
+        "done",
+        "cancelled"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "description": "Origen: cli, api, github, ci o filesystem.",
+      "minLength": 1
+    },
+    "linkedTaskIds": {
+      "type": "array",
+      "description": "Tareas que cubren el ticket.",
+      "items": {
+        "type": "string",
+        "description": "Id de tarea."
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "projectId",
+    "title",
+    "body",
+    "status",
+    "source",
+    "linkedTaskIds"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "tck_1",
+      "projectId": "prj_local",
+      "title": "Checksum",
+      "body": "Verificar checkpoints antes de reanudar.",
+      "status": "open",
+      "source": "github",
+      "linkedTaskIds": [
+        "tsk_checkpoint"
+      ]
+    }
+  ]
+}

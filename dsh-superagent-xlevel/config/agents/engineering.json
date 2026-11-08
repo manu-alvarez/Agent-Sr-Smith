@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "engineering",
+  "name": "Engineering X",
+  "summary": "Diseño, implementación en sandbox, pruebas y revisión independiente.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": [
+    "planner",
+    "architect",
+    "principal-engineer",
+    "developer",
+    "qa-engineer",
+    "reviewer",
+    "evaluator",
+    "watchdog"
+  ],
+  "tools": [
+    "workspace.read",
+    "workspace.write",
+    "knowledge.search"
+  ],
+  "capabilities": [
+    "design",
+    "implementation",
+    "verification"
+  ],
+  "limits": {
+    "maxSteps": 36,
+    "maxParallel": 4,
+    "timeoutMs": 240000
+  },
+  "profile": "engineering",
+  "model": {
+    "provider": "reference",
+    "modelId": "dsh-reference-1",
+    "neural": false,
+    "verified": true
+  },
+  "network": false
+}

@@ -1,0 +1,48 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "full",
+  "name": "Sr.Smith Full",
+  "summary": "Todos los roles disponibles, con asignación según el objetivo.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": [
+    "orchestrator",
+    "planner",
+    "architect",
+    "researcher",
+    "principal-engineer",
+    "developer",
+    "systems-engineer",
+    "security-engineer",
+    "debugger",
+    "qa-engineer",
+    "reviewer",
+    "performance-engineer",
+    "devops-engineer",
+    "data-engineer",
+    "knowledge-engineer",
+    "documentation-engineer",
+    "evaluator",
+    "watchdog",
+    "recovery-agent"
+  ],
+  "tools": [
+    "workspace.read",
+    "workspace.write",
+    "knowledge.search",
+    "memory.recall",
+    "policy.explain"
+  ],
+  "capabilities": [
+    "planning",
+    "implementation",
+    "research",
+    "security",
+    "recovery"
+  ],
+  "limits": {
+    "maxSteps": 64,
+    "maxParallel": 4,
+    "timeoutMs": 360000
+  }
+}

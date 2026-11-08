@@ -1,0 +1,170 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:models:model-response:1.0.0",
+  "title": "ModelResponse",
+  "description": "Respuesta normalizada. Si falta la credencial o la red está denegada, status es failed y error.retryable es false.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "requestId": {
+      "type": "string",
+      "description": "La misma petición.",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string",
+      "description": "Proveedor que respondió, o el que rechazó.",
+      "minLength": 1
+    },
+    "modelId": {
+      "type": "string",
+      "description": "Modelo.",
+      "minLength": 1
+    },
+    "status": {
+      "description": "completed solo con salida real.",
+      "enum": [
+        "completed",
+        "failed",
+        "incomplete"
+      ]
+    },
+    "output": {
+      "description": "Salida. text, toolCalls y structured son opcionales, pero un completed sin ninguno no es evidencia.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string",
+          "description": "Texto."
+        },
+        "toolCalls": {
+          "type": "array",
+          "description": "Llamadas pedidas.",
+          "items": {
+            "description": "Llamada.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "id": {
+                "type": "string",
+                "description": "Id.",
+                "minLength": 1
+              },
+              "name": {
+                "type": "string",
+                "description": "Herramienta.",
+                "minLength": 1
+              },
+              "arguments": {
+                "description": "Argumentos.",
+                "type": "object",
+                "additionalProperties": true,
+                "properties": {}
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "arguments"
+            ]
+          }
+        },
+        "structured": {
+          "description": "JSON ya parseado, si responseFormat era json."
+        }
+      }
+    },
+    "usage": {
+      "description": "Tokens si el proveedor los informa. El runtime de referencia puede omitirlo.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inputTokens": {
+          "type": "number",
+          "description": "Entrada.",
+          "minimum": 0
+        },
+        "outputTokens": {
+          "type": "number",
+          "description": "Salida.",
+          "minimum": 0
+        },
+        "totalTokens": {
+          "type": "number",
+          "description": "Suma.",
+          "minimum": 0
+        }
+      }
+    },
+    "finishReason": {
+      "description": "Por qué terminó.",
+      "enum": [
+        "stop",
+        "tool_calls",
+        "length",
+        "refusal",
+        "error"
+      ]
+    },
+    "latencyMs": {
+      "type": "number",
+      "description": "Tiempo de pared de esta llamada.",
+      "minimum": 0
+    },
+    "error": {
+      "description": "Error normalizado. retryable solo es true si repetir no cambia el estado.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Código estable, por ejemplo policy_denied o unknown_tool.",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "description": "Explicación sin secretos.",
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "True solo si un reintento es seguro."
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "requestId",
+    "provider",
+    "modelId",
+    "status",
+    "output",
+    "finishReason",
+    "latencyMs"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "requestId": "req_1",
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "status": "completed",
+      "output": {
+        "text": "Checkpoint escrito."
+      },
+      "finishReason": "stop",
+      "latencyMs": 2
+    }
+  ]
+}

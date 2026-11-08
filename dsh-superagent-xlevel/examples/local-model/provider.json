@@ -1,0 +1,16 @@
+{
+  "schemaVersion": "1.0.0",
+  "provider": "ollama",
+  "baseUrl": "http://127.0.0.1:11434/v1",
+  "modelId": "configured-at-runtime",
+  "verified": false,
+  "network": false,
+  "probe": {
+    "required": [
+      "el proceso responde en /v1/models",
+      "el id de modelo existe",
+      "una completación de prueba vuelve sin error"
+    ],
+    "onFailure": "verified permanece false y la ejecución no inventa la respuesta"
+  }
+}

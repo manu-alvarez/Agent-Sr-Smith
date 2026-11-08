@@ -1,0 +1,103 @@
+{
+  "schemaVersion": "1.0.0",
+  "source": "src/core/lifecycle/index.ts",
+  "phases": {
+    "received": [
+      "analysis",
+      "failed"
+    ],
+    "analysis": [
+      "planning",
+      "blocked",
+      "failed"
+    ],
+    "planning": [
+      "policy_validation",
+      "failed"
+    ],
+    "policy_validation": [
+      "task_graph",
+      "blocked",
+      "failed"
+    ],
+    "task_graph": [
+      "scheduling",
+      "failed"
+    ],
+    "scheduling": [
+      "delegation",
+      "blocked",
+      "failed"
+    ],
+    "delegation": [
+      "execution",
+      "blocked",
+      "failed"
+    ],
+    "execution": [
+      "verification",
+      "recovery",
+      "blocked",
+      "failed"
+    ],
+    "verification": [
+      "completed",
+      "recovery",
+      "blocked",
+      "failed"
+    ],
+    "recovery": [
+      "scheduling",
+      "verification",
+      "blocked",
+      "failed"
+    ],
+    "completed": [],
+    "blocked": [
+      "scheduling",
+      "verification",
+      "failed"
+    ],
+    "failed": []
+  },
+  "tasks": {
+    "pending": [
+      "ready",
+      "blocked",
+      "cancelled"
+    ],
+    "ready": [
+      "running",
+      "blocked",
+      "cancelled"
+    ],
+    "running": [
+      "completed",
+      "failed",
+      "blocked",
+      "cancelled"
+    ],
+    "blocked": [
+      "ready",
+      "cancelled",
+      "failed"
+    ],
+    "completed": [],
+    "failed": [
+      "ready"
+    ],
+    "cancelled": []
+  },
+  "happyPath": [
+    "received",
+    "analysis",
+    "planning",
+    "policy_validation",
+    "task_graph",
+    "scheduling",
+    "delegation",
+    "execution",
+    "verification",
+    "completed"
+  ]
+}

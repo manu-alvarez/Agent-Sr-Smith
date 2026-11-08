@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:governance:approval:1.0.0",
+  "title": "Approval",
+  "description": "Pedido de aprobación. pending no es un sí. El runtime de referencia no aprueba git-write ni producción por su cuenta.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id, apr_…",
+      "minLength": 1
+    },
+    "executionId": {
+      "type": "string",
+      "description": "Ejecución.",
+      "minLength": 1
+    },
+    "taskId": {
+      "type": "string",
+      "description": "Tarea, si la aprobación es de una tarea."
+    },
+    "operation": {
+      "description": "Clase de operación que la política puede permitir, denegar o mandar a aprobación.",
+      "enum": [
+        "analyze",
+        "sandbox-read",
+        "sandbox-write",
+        "test",
+        "git-write",
+        "network",
+        "secrets",
+        "external-delete",
+        "production-change"
+      ]
+    },
+    "reason": {
+      "type": "string",
+      "description": "Por qué hace falta un humano.",
+      "minLength": 1
+    },
+    "status": {
+      "description": "pending, approved o rejected.",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ]
+    },
+    "requestedAt": {
+      "type": "string",
+      "description": "ISO-8601.",
+      "minLength": 20
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "executionId",
+    "operation",
+    "reason",
+    "status",
+    "requestedAt"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "apr_1",
+      "executionId": "exe_1",
+      "taskId": "tsk_commit",
+      "operation": "git-write",
+      "reason": "Crear commits requiere la política del proyecto.",
+      "status": "pending",
+      "requestedAt": "2026-11-07T08:00:00.000Z"
+    }
+  ]
+}

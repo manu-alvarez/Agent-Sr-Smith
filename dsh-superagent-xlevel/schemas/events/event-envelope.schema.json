@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:events:event-envelope:1.0.0",
+  "title": "EventEnvelope",
+  "description": "Sobre de un hecho del ciclo. eventType sigue execution.<fase>. payload del orquestador lleva title, detail y, si hay, taskId.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "eventId": {
+      "type": "string",
+      "description": "Id, evt_…",
+      "minLength": 1
+    },
+    "eventType": {
+      "type": "string",
+      "description": "Tipo, por ejemplo execution.verification.",
+      "minLength": 1
+    },
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "aggregateId": {
+      "type": "string",
+      "description": "Agregado, normalmente la ejecución.",
+      "minLength": 1
+    },
+    "correlationId": {
+      "type": "string",
+      "description": "Correlación. En el ciclo de serie es el executionId.",
+      "minLength": 1
+    },
+    "causationId": {
+      "type": "string",
+      "description": "Evento que causó este, si existe."
+    },
+    "timestamp": {
+      "type": "string",
+      "description": "ISO-8601.",
+      "minLength": 20
+    },
+    "payload": {
+      "description": "Carga. El orquestador escribe title y detail.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "title": {
+          "type": "string",
+          "description": "Título del paso."
+        },
+        "detail": {
+          "type": "string",
+          "description": "Detalle."
+        },
+        "taskId": {
+          "type": "string",
+          "description": "Tarea, si el paso es de una tarea."
+        }
+      }
+    },
+    "metadata": {
+      "description": "Productor obligatorio. traceId es opcional.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "producer": {
+          "type": "string",
+          "description": "Módulo que publicó, por ejemplo orchestrator.",
+          "minLength": 1
+        },
+        "traceId": {
+          "type": "string",
+          "description": "Traza, si hay."
+        }
+      },
+      "required": [
+        "producer"
+      ]
+    }
+  },
+  "required": [
+    "eventId",
+    "eventType",
+    "schemaVersion",
+    "aggregateId",
+    "correlationId",
+    "timestamp",
+    "payload",
+    "metadata"
+  ],
+  "examples": [
+    {
+      "eventId": "evt_1",
+      "eventType": "execution.execution",
+      "schemaVersion": "1.0.0",
+      "aggregateId": "exe_1",
+      "correlationId": "exe_1",
+      "timestamp": "2026-11-07T08:00:00.000Z",
+      "payload": {
+        "title": "Ejecución",
+        "detail": "Tareas del lote."
+      },
+      "metadata": {
+        "producer": "orchestrator"
+      }
+    }
+  ]
+}

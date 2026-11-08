@@ -1,0 +1,15 @@
+{
+  "schemaVersion": "1.0.0",
+  "measuredAt": "2026-11-07",
+  "command": "node --experimental-strip-types scripts/benchmark.ts",
+  "objective": "Implement a durable checkpoint store with checksum verification and resume.",
+  "profileId": "engineering",
+  "runs": 5,
+  "tasks": 7,
+  "completed": 7,
+  "steps": 7,
+  "elapsedMs": [19, 5, 2, 2, 2],
+  "medianMs": 2,
+  "networkCalls": 0,
+  "note": "Runtime de referencia. No es una inferencia y no hay cifra de RAM."
+}

@@ -1,0 +1,40 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "autonomous",
+  "name": "Autonomous X",
+  "summary": "Ejecución prolongada con checkpoints, watchdog y recuperación.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": [
+    "orchestrator",
+    "planner",
+    "developer",
+    "qa-engineer",
+    "watchdog",
+    "recovery-agent",
+    "evaluator"
+  ],
+  "tools": [
+    "workspace.read",
+    "workspace.write",
+    "memory.remember"
+  ],
+  "capabilities": [
+    "checkpoint",
+    "recovery",
+    "long-running"
+  ],
+  "limits": {
+    "maxSteps": 48,
+    "maxParallel": 4,
+    "timeoutMs": 300000
+  },
+  "profile": "autonomous",
+  "model": {
+    "provider": "reference",
+    "modelId": "dsh-reference-1",
+    "neural": false,
+    "verified": true
+  },
+  "network": false
+}

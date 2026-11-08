@@ -1,0 +1,76 @@
+@import url("https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap");
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #121614;
+  --color-surface: #1b211c;
+  --color-surface-2: #242c25;
+  --color-fg: #ebe6d6;
+  --color-muted: #9a927f;
+  --color-line: #343d34;
+  --color-signal: #00ff41;
+  --color-ink: #041208;
+  --color-danger: #ff5d3a;
+  --color-warn: #e7b15a;
+  --font-sans: "IBM Plex Sans", "Liberation Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", "Liberation Mono", ui-monospace, monospace;
+  --radius-panel: 0.9rem;
+}
+
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+
+  html,
+  body {
+    background: var(--color-bg);
+    color: var(--color-fg);
+    font-family: var(--font-sans);
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  ::selection {
+    background: #00ff41;
+    color: #041208;
+  }
+
+  input:focus,
+  textarea:focus,
+  button:focus-visible {
+    outline: 2px solid #00ff41;
+    outline-offset: 2px;
+  }
+}
+
+.matrix-title {
+  text-shadow:
+    0 0 10px rgb(0 255 65 / 0.9),
+    0 0 28px rgb(0 255 65 / 0.45);
+}
+
+.matrix-scan {
+  background: repeating-linear-gradient(to bottom, transparent 0 2px, rgb(0 0 0 / 0.22) 2px 4px);
+  mix-blend-mode: multiply;
+}
+
+.matrix-line {
+  height: 2px;
+  background: #00ff41;
+  box-shadow: 0 0 18px #00ff41;
+  animation: matrix-pulse 2.8s ease-in-out infinite;
+}
+
+@keyframes matrix-pulse {
+  50% {
+    opacity: 0.35;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .matrix-line {
+    animation: none;
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "security",
+  "name": "Security X",
+  "summary": "Auditoría defensiva, modelo de amenazas y revisión de privilegios.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": [
+    "planner",
+    "security-engineer",
+    "systems-engineer",
+    "reviewer",
+    "evaluator",
+    "watchdog"
+  ],
+  "tools": [
+    "policy.explain",
+    "workspace.read",
+    "knowledge.search"
+  ],
+  "capabilities": [
+    "threat-model",
+    "least-privilege"
+  ],
+  "limits": {
+    "maxSteps": 28,
+    "maxParallel": 3,
+    "timeoutMs": 180000
+  }
+}

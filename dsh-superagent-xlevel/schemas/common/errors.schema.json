@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:common:errors:1.0.0",
+  "title": "Error",
+  "description": "Error compartido por gateway y herramientas.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "code": {
+      "type": "string",
+      "description": "Código estable, por ejemplo policy_denied o unknown_tool.",
+      "minLength": 1
+    },
+    "message": {
+      "type": "string",
+      "description": "Explicación sin secretos.",
+      "minLength": 1
+    },
+    "retryable": {
+      "type": "boolean",
+      "description": "True solo si un reintento es seguro."
+    }
+  },
+  "required": [
+    "code",
+    "message",
+    "retryable"
+  ],
+  "examples": [
+    {
+      "code": "policy_denied",
+      "message": "strict-local bloquea la red.",
+      "retryable": false
+    }
+  ]
+}

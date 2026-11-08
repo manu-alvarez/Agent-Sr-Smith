@@ -1,0 +1,96 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:models:capability:1.0.0",
+  "title": "Capability",
+  "description": "Capacidad declarada frente a capacidad verificada. verified null significa no comprobada, no falsa ni verdadera.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id, cap_<nombre>.",
+      "minLength": 1
+    },
+    "kind": {
+      "description": "model es un adaptador. tool es una herramienta. runtime es el plano de control.",
+      "enum": [
+        "model",
+        "tool",
+        "runtime"
+      ]
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre visible.",
+      "minLength": 1
+    },
+    "provider": {
+      "type": "string",
+      "description": "Proveedor. Obligatorio en las capacidades de modelo que publica el registro.",
+      "minLength": 1
+    },
+    "modelId": {
+      "type": "string",
+      "description": "Modelo o configured-at-runtime si aún no hay id.",
+      "minLength": 1
+    },
+    "declared": {
+      "description": "Lo que el adaptador anuncia. Las claves dependen del proveedor; no son una sonda.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "verified": {
+      "description": "Resultado de una sonda real, o null si no se ha hecho.",
+      "type": [
+        "object",
+        "null"
+      ]
+    },
+    "restrictions": {
+      "type": "array",
+      "description": "Límites escritos. La primera suele recordar que no hay capacidades ocultas.",
+      "items": {
+        "type": "string",
+        "description": "Restricción.",
+        "minLength": 1
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "kind",
+    "name",
+    "declared",
+    "verified",
+    "restrictions",
+    "provider",
+    "modelId"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "cap_reference",
+      "kind": "model",
+      "name": "Reference runtime",
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "declared": {
+        "neural": false,
+        "maxContext": 8192
+      },
+      "verified": {
+        "deterministic": true,
+        "neural": false
+      },
+      "restrictions": [
+        "No es un modelo neuronal."
+      ]
+    }
+  ]
+}

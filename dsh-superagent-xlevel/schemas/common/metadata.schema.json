@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:common:metadata:1.0.0",
+  "title": "Metadata",
+  "description": "Envoltorio genérico. El contenido es libre y no debe llevar secretos.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "metadata": {
+      "description": "Mapa libre.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    }
+  },
+  "required": [
+    "metadata"
+  ],
+  "examples": [
+    {
+      "metadata": {
+        "producer": "orchestrator"
+      }
+    }
+  ]
+}

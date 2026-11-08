@@ -1,0 +1,38 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "research",
+  "name": "Research X",
+  "summary": "Investigación, síntesis y validación de fuentes.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": [
+    "planner",
+    "researcher",
+    "knowledge-engineer",
+    "evaluator",
+    "watchdog"
+  ],
+  "tools": [
+    "knowledge.search",
+    "memory.recall",
+    "memory.remember"
+  ],
+  "capabilities": [
+    "research",
+    "citation",
+    "synthesis"
+  ],
+  "limits": {
+    "maxSteps": 24,
+    "maxParallel": 3,
+    "timeoutMs": 180000
+  },
+  "profile": "research",
+  "model": {
+    "provider": "reference",
+    "modelId": "dsh-reference-1",
+    "neural": false,
+    "verified": true
+  },
+  "network": false
+}

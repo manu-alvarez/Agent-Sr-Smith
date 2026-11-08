@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "headless",
+  "name": "Headless X",
+  "summary": "El mismo ciclo, pensado para CLI sin interfaz.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": [
+    "planner",
+    "developer",
+    "qa-engineer",
+    "evaluator",
+    "watchdog"
+  ],
+  "tools": [
+    "workspace.read",
+    "workspace.write"
+  ],
+  "capabilities": [
+    "cli",
+    "verification"
+  ],
+  "limits": {
+    "maxSteps": 24,
+    "maxParallel": 2,
+    "timeoutMs": 180000
+  },
+  "profile": "headless",
+  "model": {
+    "provider": "reference",
+    "modelId": "dsh-reference-1",
+    "neural": false,
+    "verified": true
+  },
+  "network": false
+}

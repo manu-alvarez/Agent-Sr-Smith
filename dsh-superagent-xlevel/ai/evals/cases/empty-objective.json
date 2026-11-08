@@ -1,0 +1,14 @@
+{
+  "id": "empty-objective",
+  "objective": "   ",
+  "profileId": "engineering",
+  "mode": "strict-local",
+  "expect": {
+    "status": "failed",
+    "sensitive": false,
+    "mode": "strict-local",
+    "sandboxOnly": true,
+    "secretsRedacted": true,
+    "referenceLimitation": false
+  }
+}

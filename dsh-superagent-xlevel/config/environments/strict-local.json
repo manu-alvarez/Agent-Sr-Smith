@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "mode": "strict-local",
+  "allowNetworkInference": false,
+  "httpHost": "127.0.0.1",
+  "referenceProvider": "reference",
+  "referenceModel": "dsh-reference-1",
+  "automaticOperations": [
+    "analyze",
+    "sandbox-read",
+    "sandbox-write",
+    "test"
+  ],
+  "approvalOperations": [
+    "git-write",
+    "production-change"
+  ],
+  "deniedOperations": [
+    "network",
+    "secrets",
+    "external-delete"
+  ]
+}

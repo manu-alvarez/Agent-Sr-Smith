@@ -1,0 +1,131 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:execution:checkpoint:1.0.0",
+  "title": "Checkpoint",
+  "description": "Punto de reanudación. checksum cubre state. Restaurar con otro checksum es un fallo, no un éxito silencioso.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id, chk_…",
+      "minLength": 1
+    },
+    "executionId": {
+      "type": "string",
+      "description": "Ejecución.",
+      "minLength": 1
+    },
+    "sequence": {
+      "type": "number",
+      "description": "Orden creciente desde 0.",
+      "minimum": 0
+    },
+    "phase": {
+      "description": "Fase en la que se tomó.",
+      "enum": [
+        "received",
+        "analysis",
+        "planning",
+        "policy_validation",
+        "task_graph",
+        "scheduling",
+        "delegation",
+        "execution",
+        "verification",
+        "recovery",
+        "completed",
+        "blocked",
+        "failed"
+      ]
+    },
+    "state": {
+      "description": "Lo mínimo para seguir. taskStatuses usa el mismo vocabulario que Task.status.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "completedTaskIds": {
+          "type": "array",
+          "description": "Tareas ya cerradas.",
+          "items": {
+            "type": "string",
+            "description": "Id."
+          }
+        },
+        "pendingTaskIds": {
+          "type": "array",
+          "description": "Tareas aún no completed.",
+          "items": {
+            "type": "string",
+            "description": "Id."
+          }
+        },
+        "taskStatuses": {
+          "description": "Mapa id → estado.",
+          "type": "object",
+          "additionalProperties": {
+            "description": "Estado.",
+            "enum": [
+              "pending",
+              "ready",
+              "running",
+              "blocked",
+              "completed",
+              "failed",
+              "cancelled"
+            ]
+          }
+        }
+      },
+      "required": [
+        "completedTaskIds",
+        "pendingTaskIds",
+        "taskStatuses"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "description": "ISO-8601.",
+      "minLength": 20
+    },
+    "checksum": {
+      "type": "string",
+      "description": "Hex o resumen estable del state. Mínimo 8 caracteres.",
+      "minLength": 8
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "executionId",
+    "sequence",
+    "phase",
+    "state",
+    "createdAt",
+    "checksum"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "chk_1",
+      "executionId": "exe_1",
+      "sequence": 0,
+      "phase": "execution",
+      "state": {
+        "completedTaskIds": [],
+        "pendingTaskIds": [
+          "tsk_checkpoint"
+        ],
+        "taskStatuses": {
+          "tsk_checkpoint": "ready"
+        }
+      },
+      "createdAt": "2026-11-07T08:00:00.000Z",
+      "checksum": "aabbccdd"
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+name: coverage
+on: [workflow_dispatch]
+jobs:
+  note:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "La cobertura no se finge. La puerta real es npm test en ci.yml."

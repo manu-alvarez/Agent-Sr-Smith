@@ -1,0 +1,41 @@
+{
+  "schemaVersion": "1.0.0",
+  "reference": {
+    "network": false,
+    "verified": true,
+    "modelId": "dsh-reference-1",
+    "neural": false,
+    "reason": "Runtime determinista. No es un modelo."
+  },
+  "ollama": {
+    "baseUrl": "http://127.0.0.1:11434/v1",
+    "network": false,
+    "verified": false,
+    "reason": "URL local conocida. Sin probe, verified sigue en false."
+  },
+  "deepseek": {
+    "baseUrl": "https://api.deepseek.com",
+    "network": true,
+    "verified": false,
+    "reason": "Denegado en strict-local. La clave no se lee de un archivo de ejemplo."
+  },
+  "openai-compatible": {
+    "baseUrl": "",
+    "baseUrlStatus": "unset",
+    "network": true,
+    "verified": false,
+    "reason": "No hay endpoint hasta que el operador escriba una URL real."
+  },
+  "anthropic": {
+    "baseUrl": "https://api.anthropic.com",
+    "network": true,
+    "verified": false,
+    "reason": "Adaptador presente. Sin sonda ni credencial no está verificado."
+  },
+  "google": {
+    "baseUrl": "https://generativelanguage.googleapis.com",
+    "network": true,
+    "verified": false,
+    "reason": "Adaptador presente. Sin sonda ni credencial no está verificado."
+  }
+}

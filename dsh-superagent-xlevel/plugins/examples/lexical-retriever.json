@@ -1,0 +1,23 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "plugin_lexical_retriever",
+  "name": "Lexical retriever",
+  "version": "1.0.0",
+  "type": "knowledge",
+  "contracts": [
+    "knowledge.search"
+  ],
+  "capabilities": [
+    "lexical-retrieval"
+  ],
+  "permissions": [],
+  "dshVersion": "1.0.0",
+  "entry": "src/knowledge/retrieval/index.ts",
+  "enabled": true,
+  "status": "reference",
+  "behavior": {
+    "index": "léxico, sin embeddings",
+    "citation": "solo pasajes recuperados",
+    "emptyResult": "la afirmación queda marcada como no cubierta"
+  }
+}

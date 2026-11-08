@@ -1,0 +1,17 @@
+{
+  "schemaVersion": "1.0.0",
+  "product": "Sr.Smith",
+  "mode": "strict-local",
+  "profileId": "engineering",
+  "policyId": "pol_default_autonomy",
+  "dataDir": ".dsh",
+  "httpHost": "127.0.0.1",
+  "httpPort": 8787,
+  "referenceProvider": "reference",
+  "referenceModel": "dsh-reference-1",
+  "networkProvidersEnabled": false,
+  "env": {
+    "preferredPrefix": "SMITH_",
+    "legacyPrefix": "DSH_"
+  }
+}

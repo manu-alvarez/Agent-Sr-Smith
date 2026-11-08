@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:execution:execution:1.0.0",
+  "title": "Execution",
+  "description": "Cabecera de una ejecución. El informe completo añade plan, tareas, verificación y auditoría; esta es la identidad.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "executionId": {
+      "type": "string",
+      "description": "Id, exe_…",
+      "minLength": 1
+    },
+    "status": {
+      "description": "completed solo si la verificación acepta.",
+      "enum": [
+        "completed",
+        "blocked",
+        "failed"
+      ]
+    },
+    "phase": {
+      "description": "Última fase alcanzada.",
+      "enum": [
+        "received",
+        "analysis",
+        "planning",
+        "policy_validation",
+        "task_graph",
+        "scheduling",
+        "delegation",
+        "execution",
+        "verification",
+        "recovery",
+        "completed",
+        "blocked",
+        "failed"
+      ]
+    },
+    "mode": {
+      "description": "strict-local no abre red. local-runtime puede pedir aprobación para un adaptador remoto.",
+      "enum": [
+        "strict-local",
+        "local-runtime"
+      ]
+    },
+    "profileId": {
+      "description": "Perfil.",
+      "enum": [
+        "research",
+        "engineering",
+        "autonomous",
+        "security",
+        "full",
+        "headless"
+      ]
+    },
+    "objective": {
+      "type": "string",
+      "description": "Objetivo literal."
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "executionId",
+    "status",
+    "phase",
+    "mode",
+    "profileId",
+    "objective"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "executionId": "exe_1",
+      "status": "completed",
+      "phase": "completed",
+      "mode": "strict-local",
+      "profileId": "engineering",
+      "objective": "Implement a checksummed checkpoint inside the local sandbox."
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:orchestration:task-graph:1.0.0",
+  "title": "TaskGraph",
+  "description": "Instantánea del grafo. edges sale de dependencies: from es la dependencia y to la tarea que espera. cycle es null si el orden topológico existe.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "planId": {
+      "type": "string",
+      "description": "Plan del que sale el grafo.",
+      "minLength": 1
+    },
+    "tasks": {
+      "type": "array",
+      "description": "Tareas del plan.",
+      "items": {
+        "description": "Tarea.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "schemaVersion": {
+            "const": "1.0.0",
+            "description": "Versión de contrato. Hoy solo 1.0.0."
+          },
+          "id": {
+            "type": "string",
+            "description": "Identificador de la tarea.",
+            "minLength": 1
+          },
+          "parentId": {
+            "type": "string",
+            "description": "Tarea padre si la descomposición es jerárquica."
+          },
+          "projectId": {
+            "type": "string",
+            "description": "Proyecto al que pertenece el plan.",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "description": "Tipo de trabajo: design, implement, test, review, research u otro rol del plan.",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "description": "Título corto visible en el grafo.",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Qué hay que producir.",
+            "minLength": 1
+          },
+          "assignedRole": {
+            "type": "string",
+            "description": "Rol del catálogo, por ejemplo developer o reviewer."
+          },
+          "assignedAgentId": {
+            "type": "string",
+            "description": "Id del agente, normalmente agt_<rol>."
+          },
+          "dependencies": {
+            "type": "array",
+            "description": "Ids de tareas que deben estar completed antes de que esta pase a ready.",
+            "items": {
+              "type": "string",
+              "description": "Id de tarea."
+            }
+          },
+          "status": {
+            "description": "Estado de la tarea dentro del grafo.",
+            "enum": [
+              "pending",
+              "ready",
+              "running",
+              "blocked",
+              "completed",
+              "failed",
+              "cancelled"
+            ]
+          },
+          "acceptanceCriteria": {
+            "type": "array",
+            "description": "Criterios observables. Cada uno necesita evidencia independiente.",
+            "items": {
+              "type": "string",
+              "description": "Un criterio comprobable.",
+              "minLength": 1
+            },
+            "minItems": 1
+          },
+          "inputs": {
+            "description": "Entradas estructuradas. Puede estar vacío.",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {}
+          },
+          "outputs": {
+            "description": "Salidas producidas. Ausente hasta que la tarea termina.",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {}
+          },
+          "budget": {
+            "description": "Presupuesto de una tarea. Agotarlo bloquea; no se convierte en éxito.",
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "maxSteps": {
+                "type": "number",
+                "description": "Pasos de orquestación permitidos para esta tarea.",
+                "minimum": 1
+              },
+              "timeoutMs": {
+                "type": "number",
+                "description": "Tiempo máximo en milisegundos.",
+                "minimum": 1
+              },
+              "maxRetries": {
+                "type": "number",
+                "description": "Reintentos de una acción idempotente. Un borrado no se reintenta.",
+                "minimum": 0
+              }
+            },
+            "required": [
+              "maxSteps",
+              "timeoutMs",
+              "maxRetries"
+            ]
+          },
+          "attempts": {
+            "type": "number",
+            "description": "Intentos ya consumidos.",
+            "minimum": 0
+          },
+          "requiresApproval": {
+            "type": "boolean",
+            "description": "True si la operación es git-write, red en local-runtime o production-change."
+          },
+          "operation": {
+            "description": "Clase de operación que la política puede permitir, denegar o mandar a aprobación.",
+            "enum": [
+              "analyze",
+              "sandbox-read",
+              "sandbox-write",
+              "test",
+              "git-write",
+              "network",
+              "secrets",
+              "external-delete",
+              "production-change"
+            ]
+          },
+          "blockedReason": {
+            "type": "string",
+            "description": "Motivo si status es blocked. Vacío o ausente en el resto."
+          }
+        },
+        "required": [
+          "schemaVersion",
+          "id",
+          "projectId",
+          "type",
+          "title",
+          "description",
+          "dependencies",
+          "status",
+          "acceptanceCriteria",
+          "inputs",
+          "budget",
+          "attempts",
+          "requiresApproval",
+          "operation"
+        ]
+      }
+    },
+    "edges": {
+      "type": "array",
+      "description": "Aristas de dependencia.",
+      "items": {
+        "description": "from debe completarse antes de to.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "from": {
+            "type": "string",
+            "description": "Id de la dependencia.",
+            "minLength": 1
+          },
+          "to": {
+            "type": "string",
+            "description": "Id de la tarea dependiente.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "from",
+          "to"
+        ]
+      }
+    },
+    "cycle": {
+      "description": "Ids que forman un ciclo, o null si el grafo es válido.",
+      "type": [
+        "array",
+        "null"
+      ],
+      "items": {
+        "type": "string",
+        "description": "Id implicado en el ciclo."
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "planId",
+    "tasks",
+    "edges",
+    "cycle"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "planId": "pln_demo",
+      "tasks": [
+        {
+          "schemaVersion": "1.0.0",
+          "id": "tsk_checkpoint",
+          "projectId": "prj_local",
+          "type": "implement",
+          "title": "Checkpoint con checksum",
+          "description": "Persistir el estado y comprobar el checksum antes de reanudar.",
+          "assignedRole": "developer",
+          "dependencies": [],
+          "status": "completed",
+          "acceptanceCriteria": [
+            "El checksum del checkpoint coincide al restaurar."
+          ],
+          "inputs": {
+            "path": "sandbox/checkpoint.json"
+          },
+          "budget": {
+            "maxSteps": 8,
+            "timeoutMs": 120000,
+            "maxRetries": 1
+          },
+          "attempts": 1,
+          "requiresApproval": false,
+          "operation": "sandbox-write"
+        }
+      ],
+      "edges": [],
+      "cycle": null
+    }
+  ]
+}

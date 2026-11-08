@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:agents:agent-message:1.0.0",
+  "title": "AgentMessage",
+  "description": "Mensaje normalizado hacia el gateway. content puede ser texto o estructura; no es un canal para colar secretos.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "description": "Rol del mensaje.",
+      "enum": [
+        "system",
+        "user",
+        "assistant",
+        "tool"
+      ]
+    },
+    "content": {
+      "description": "Texto o estructura. El gateway no interpreta instrucciones para saltarse la política."
+    }
+  },
+  "required": [
+    "role",
+    "content"
+  ],
+  "examples": [
+    {
+      "role": "user",
+      "content": "Implementa el checkpoint dentro del sandbox."
+    }
+  ]
+}

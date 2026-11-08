@@ -1,0 +1,739 @@
+[
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_orchestrator",
+    "name": "Orchestrator",
+    "role": "orchestrator",
+    "description": "Dirige el objetivo, no escribe código ni ejecuta herramientas privilegiadas.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "routing",
+      "delegation",
+      "budget-control"
+    ],
+    "tools": [],
+    "permissions": {
+      "filesystem": "none",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/system/orchestrator.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_planner",
+    "name": "Planner",
+    "role": "planner",
+    "description": "Descompone objetivos en un grafo con criterios de aceptación.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "hierarchical-planning",
+      "decomposition"
+    ],
+    "tools": [],
+    "permissions": {
+      "filesystem": "none",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/system/planner.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_architect",
+    "name": "Principal Architect",
+    "role": "architect",
+    "description": "Define límites, componentes y no-objetivos del cambio.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "system-design",
+      "boundary-review"
+    ],
+    "tools": [
+      "knowledge.search"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/architect.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_researcher",
+    "name": "Researcher",
+    "role": "researcher",
+    "description": "Investiga con fuentes recuperadas y registra procedencia.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "research",
+      "synthesis",
+      "citation"
+    ],
+    "tools": [
+      "knowledge.search",
+      "memory.recall"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/researcher.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_principal-engineer",
+    "name": "Principal Engineer",
+    "role": "principal-engineer",
+    "description": "Toma decisiones de implementación y contratos internos.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "engineering-judgment",
+      "interfaces"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "workspace",
+      "network": false,
+      "shell": false,
+      "git": true
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/engineer.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_developer",
+    "name": "Developer",
+    "role": "developer",
+    "description": "Materializa el cambio dentro del sandbox aislado.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "implementation",
+      "sandbox-edit"
+    ],
+    "tools": [
+      "workspace.read",
+      "workspace.write"
+    ],
+    "permissions": {
+      "filesystem": "workspace",
+      "network": false,
+      "shell": false,
+      "git": true
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/developer.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_systems-engineer",
+    "name": "Systems Engineer",
+    "role": "systems-engineer",
+    "description": "Aísla procesos, recursos y límites operativos.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "runtime",
+      "isolation"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/devops.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_security-engineer",
+    "name": "Security Engineer",
+    "role": "security-engineer",
+    "description": "Analiza amenazas, permisos y datos sensibles sin explotarlos.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "threat-model",
+      "least-privilege"
+    ],
+    "tools": [
+      "policy.explain",
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/security.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_debugger",
+    "name": "Debugger",
+    "role": "debugger",
+    "description": "Diagnostica fallos con evidencia, sin ocultarlos.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "diagnosis",
+      "reproduction"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "workspace",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/debugger.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_qa-engineer",
+    "name": "QA Engineer",
+    "role": "qa-engineer",
+    "description": "Define pruebas que cubren los criterios de aceptación.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "test-design",
+      "acceptance"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "workspace",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/tester.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_reviewer",
+    "name": "Code Reviewer",
+    "role": "reviewer",
+    "description": "Revisa el entregable sin ser quien lo produjo.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "independent-review",
+      "defect-detection"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/reviewer.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_performance-engineer",
+    "name": "Performance Engineer",
+    "role": "performance-engineer",
+    "description": "Identifica costes, límites y mediciones.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "profiling",
+      "budgets"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/engineer.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_devops-engineer",
+    "name": "DevOps Engineer",
+    "role": "devops-engineer",
+    "description": "Especifica automatización local, sin tocar producción.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "ci",
+      "local-deploy"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": true
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/devops.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_data-engineer",
+    "name": "Data Engineer",
+    "role": "data-engineer",
+    "description": "Modela datos, migraciones y procedencia.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "schemas",
+      "pipelines"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "workspace",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/engineer.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_knowledge-engineer",
+    "name": "Knowledge Engineer",
+    "role": "knowledge-engineer",
+    "description": "Recupera y consolida conocimiento con citas.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "rag",
+      "provenance"
+    ],
+    "tools": [
+      "knowledge.search",
+      "memory.remember"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/researcher.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_documentation-engineer",
+    "name": "Documentation Engineer",
+    "role": "documentation-engineer",
+    "description": "Escribe documentación alineada con el comportamiento real.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "technical-writing"
+    ],
+    "tools": [
+      "workspace.read",
+      "workspace.write"
+    ],
+    "permissions": {
+      "filesystem": "workspace",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/specialists/documentation.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_evaluator",
+    "name": "Evaluator",
+    "role": "evaluator",
+    "description": "Decide aceptación solo con evidencia, nunca con la autodeclaración del worker.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "independent-verification"
+    ],
+    "tools": [
+      "workspace.read"
+    ],
+    "permissions": {
+      "filesystem": "restricted",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/system/evaluator.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_watchdog",
+    "name": "Watchdog",
+    "role": "watchdog",
+    "description": "Detecta bloqueos, bucles y desvíos. No cambia políticas.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "supervision"
+    ],
+    "tools": [],
+    "permissions": {
+      "filesystem": "none",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/system/supervisor.md",
+    "enabled": true
+  },
+  {
+    "schemaVersion": "1.0.0",
+    "id": "agt_recovery-agent",
+    "name": "Recovery Agent",
+    "role": "recovery-agent",
+    "description": "Clasifica fallos y propone reintento, replan o escalado.",
+    "model": {
+      "provider": "reference",
+      "modelId": "dsh-reference-1",
+      "fallback": [
+        "ollama",
+        "openai-compatible"
+      ]
+    },
+    "capabilities": [
+      "diagnosis",
+      "replanning"
+    ],
+    "tools": [],
+    "permissions": {
+      "filesystem": "none",
+      "network": false,
+      "shell": false,
+      "git": false
+    },
+    "limits": {
+      "maxSteps": 8,
+      "maxTokens": 4096,
+      "timeoutMs": 120000,
+      "maxToolCalls": 12
+    },
+    "policies": [
+      "pol_default_autonomy"
+    ],
+    "promptRef": "prompts/strategies/recovery.md",
+    "enabled": true
+  }
+]

@@ -1,0 +1,12 @@
+{
+  "action": "opened",
+  "issue": {
+    "number": 17,
+    "title": "Checksum inestable al reanudar",
+    "body": "El checkpoint se restaura con otro checksum y el runtime lo da por bueno. Esperado: fallo, no éxito silencioso. No incluye secretos."
+  },
+  "repository": {
+    "full_name": "manu-alvarez/Sr.Smith",
+    "private": true
+  }
+}

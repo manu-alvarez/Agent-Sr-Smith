@@ -1,0 +1,175 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:tools:tool-manifest:1.0.0",
+  "title": "ToolManifest",
+  "description": "Herramienta normalizada, venga de nativo, MCP o plugin. El agente no la ejecuta: pasa por Tool Fabric.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id, tol_<nombre>.",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre invocable.",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "description": "Versión del manifiesto.",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "description": "Qué hace, en una frase.",
+      "minLength": 1
+    },
+    "source": {
+      "description": "Origen.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "description": "native es el catálogo de serie. mcp y plugin no levantan un servidor por existir el contrato.",
+          "enum": [
+            "mcp",
+            "native",
+            "plugin"
+          ]
+        },
+        "identifier": {
+          "type": "string",
+          "description": "Nombre estable en ese origen.",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "type",
+        "identifier"
+      ]
+    },
+    "inputSchema": {
+      "description": "JSON Schema de los argumentos. additionalProperties depende de la herramienta.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "outputSchema": {
+      "description": "JSON Schema de la salida, si está fijada.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "Capacidades que esta herramienta cubre.",
+      "items": {
+        "type": "string",
+        "description": "Capacidad."
+      }
+    },
+    "permissions": {
+      "description": "Permisos de la herramienta. requiresApproval true no se salta con el texto del objetivo.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "network": {
+          "type": "boolean",
+          "description": "True queda denegado en strict-local."
+        },
+        "filesystem": {
+          "type": "boolean",
+          "description": "True solo alcanza el sandbox virtual."
+        },
+        "shell": {
+          "type": "boolean",
+          "description": "Las herramientas nativas de serie lo dejan en false."
+        },
+        "requiresApproval": {
+          "type": "boolean",
+          "description": "True exige una aprobación registrada."
+        }
+      },
+      "required": [
+        "network",
+        "filesystem",
+        "shell",
+        "requiresApproval"
+      ]
+    },
+    "execution": {
+      "description": "Cómo se ejecuta. idempotent false impide el reintento automático.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutMs": {
+          "type": "number",
+          "description": "Tiempo máximo.",
+          "minimum": 1
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "El transporte puede repetir."
+        },
+        "idempotent": {
+          "type": "boolean",
+          "description": "Repetir no cambia el resultado. workspace.write es false."
+        }
+      },
+      "required": [
+        "timeoutMs",
+        "retryable",
+        "idempotent"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "description",
+    "source",
+    "inputSchema",
+    "capabilities",
+    "permissions",
+    "execution"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "tol_workspace.write",
+      "name": "workspace.write",
+      "version": "1.0.0",
+      "description": "Escribe un archivo bajo sandbox/.",
+      "source": {
+        "type": "native",
+        "identifier": "workspace.write"
+      },
+      "inputSchema": {
+        "type": "object",
+        "additionalProperties": true
+      },
+      "capabilities": [
+        "workspace.write"
+      ],
+      "permissions": {
+        "network": false,
+        "filesystem": true,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": false
+      }
+    }
+  ]
+}

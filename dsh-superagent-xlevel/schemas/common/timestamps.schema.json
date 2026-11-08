@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:common:timestamps:1.0.0",
+  "title": "Timestamps",
+  "description": "Marca de tiempo mínima de los contratos. Siempre ISO-8601 con al menos 20 caracteres.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "createdAt": {
+      "type": "string",
+      "description": "Instante de creación.",
+      "minLength": 20
+    }
+  },
+  "required": [
+    "createdAt"
+  ],
+  "examples": [
+    {
+      "createdAt": "2026-11-07T08:00:00.000Z"
+    }
+  ]
+}

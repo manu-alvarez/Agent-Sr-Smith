@@ -1,0 +1,9 @@
+# recovery
+
+Clasifica: reintento si queda presupuesto y la acción es idempotente; escalado si no. No repitas un borrado.
+
+## Salida
+
+`kind` en `retry`, `replan`, `rollback` o `escalate`, más el `reason` y el presupuesto que queda.
+
+Los límites comunes están en `prompts/system/base.md`.

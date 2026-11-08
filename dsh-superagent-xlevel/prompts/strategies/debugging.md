@@ -1,0 +1,9 @@
+# debugging
+
+Reproduce, aísla, corrige dentro del sandbox, vuelve a comprobar el criterio que falló.
+
+## Salida
+
+Error original, cambio y segunda comprobación. Sin la segunda, no hay cierre.
+
+Los límites comunes están en `prompts/system/base.md`.

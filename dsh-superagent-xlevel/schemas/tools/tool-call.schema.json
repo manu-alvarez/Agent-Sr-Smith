@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:tools:tool-call:1.0.0",
+  "title": "ToolCall",
+  "description": "Invocación pedida por un modelo o por el runtime de referencia.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Id de la llamada.",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre registrado en el manifiesto.",
+      "minLength": 1
+    },
+    "arguments": {
+      "description": "Argumentos. Se escanean contra inyección antes de ejecutar.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "arguments"
+  ],
+  "examples": [
+    {
+      "id": "call_1",
+      "name": "workspace.write",
+      "arguments": {
+        "path": "sandbox/checkpoint.json",
+        "content": "{}"
+      }
+    }
+  ]
+}

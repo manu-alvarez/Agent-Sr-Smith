@@ -1,0 +1,320 @@
+{
+  "schemaVersion": "1.0.0",
+  "canonicalRoot": "schemas",
+  "schemas": [
+    {
+      "path": "schemas/agents/agent-message.schema.json",
+      "id": "urn:sr-smith:schema:agents:agent-message:1.0.0",
+      "title": "AgentMessage",
+      "required": [
+        "role",
+        "content"
+      ]
+    },
+    {
+      "path": "schemas/agents/agent-result.schema.json",
+      "id": "urn:sr-smith:schema:agents:agent-result:1.0.0",
+      "title": "AgentResult",
+      "required": [
+        "schemaVersion",
+        "agentId",
+        "taskId",
+        "status",
+        "summary",
+        "outputs",
+        "evidence"
+      ]
+    },
+    {
+      "path": "schemas/agents/agent-spec.schema.json",
+      "id": "urn:sr-smith:schema:agents:agent-spec:1.0.0",
+      "title": "AgentSpec",
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "role",
+        "description",
+        "model",
+        "capabilities",
+        "tools",
+        "permissions",
+        "limits",
+        "policies",
+        "promptRef",
+        "enabled"
+      ]
+    },
+    {
+      "path": "schemas/common/errors.schema.json",
+      "id": "urn:sr-smith:schema:common:errors:1.0.0",
+      "title": "Error",
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ]
+    },
+    {
+      "path": "schemas/common/identifiers.schema.json",
+      "id": "urn:sr-smith:schema:common:identifiers:1.0.0",
+      "title": "Identifier",
+      "required": [
+        "id",
+        "prefix"
+      ]
+    },
+    {
+      "path": "schemas/common/metadata.schema.json",
+      "id": "urn:sr-smith:schema:common:metadata:1.0.0",
+      "title": "Metadata",
+      "required": [
+        "metadata"
+      ]
+    },
+    {
+      "path": "schemas/common/timestamps.schema.json",
+      "id": "urn:sr-smith:schema:common:timestamps:1.0.0",
+      "title": "Timestamps",
+      "required": [
+        "createdAt"
+      ]
+    },
+    {
+      "path": "schemas/events/event-envelope.schema.json",
+      "id": "urn:sr-smith:schema:events:event-envelope:1.0.0",
+      "title": "EventEnvelope",
+      "required": [
+        "eventId",
+        "eventType",
+        "schemaVersion",
+        "aggregateId",
+        "correlationId",
+        "timestamp",
+        "payload",
+        "metadata"
+      ]
+    },
+    {
+      "path": "schemas/execution/checkpoint.schema.json",
+      "id": "urn:sr-smith:schema:execution:checkpoint:1.0.0",
+      "title": "Checkpoint",
+      "required": [
+        "schemaVersion",
+        "id",
+        "executionId",
+        "sequence",
+        "phase",
+        "state",
+        "createdAt",
+        "checksum"
+      ]
+    },
+    {
+      "path": "schemas/execution/execution.schema.json",
+      "id": "urn:sr-smith:schema:execution:execution:1.0.0",
+      "title": "Execution",
+      "required": [
+        "schemaVersion",
+        "executionId",
+        "status",
+        "phase",
+        "mode",
+        "profileId",
+        "objective"
+      ]
+    },
+    {
+      "path": "schemas/governance/approval.schema.json",
+      "id": "urn:sr-smith:schema:governance:approval:1.0.0",
+      "title": "Approval",
+      "required": [
+        "schemaVersion",
+        "id",
+        "executionId",
+        "operation",
+        "reason",
+        "status",
+        "requestedAt"
+      ]
+    },
+    {
+      "path": "schemas/governance/policy.schema.json",
+      "id": "urn:sr-smith:schema:governance:policy:1.0.0",
+      "title": "Policy",
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "version",
+        "rules"
+      ]
+    },
+    {
+      "path": "schemas/memory/memory-record.schema.json",
+      "id": "urn:sr-smith:schema:memory:memory-record:1.0.0",
+      "title": "MemoryRecord",
+      "required": [
+        "schemaVersion",
+        "id",
+        "type",
+        "content",
+        "provenance",
+        "metadata"
+      ]
+    },
+    {
+      "path": "schemas/models/capability.schema.json",
+      "id": "urn:sr-smith:schema:models:capability:1.0.0",
+      "title": "Capability",
+      "required": [
+        "schemaVersion",
+        "id",
+        "kind",
+        "name",
+        "declared",
+        "verified",
+        "restrictions",
+        "provider",
+        "modelId"
+      ]
+    },
+    {
+      "path": "schemas/models/model-request.schema.json",
+      "id": "urn:sr-smith:schema:models:model-request:1.0.0",
+      "title": "ModelRequest",
+      "required": [
+        "schemaVersion",
+        "requestId",
+        "sessionId",
+        "agentId",
+        "model",
+        "messages",
+        "parameters",
+        "constraints",
+        "metadata"
+      ]
+    },
+    {
+      "path": "schemas/models/model-response.schema.json",
+      "id": "urn:sr-smith:schema:models:model-response:1.0.0",
+      "title": "ModelResponse",
+      "required": [
+        "schemaVersion",
+        "requestId",
+        "provider",
+        "modelId",
+        "status",
+        "output",
+        "finishReason",
+        "latencyMs"
+      ]
+    },
+    {
+      "path": "schemas/orchestration/plan.schema.json",
+      "id": "urn:sr-smith:schema:orchestration:plan:1.0.0",
+      "title": "Plan",
+      "required": [
+        "schemaVersion",
+        "id",
+        "projectId",
+        "profileId",
+        "objective",
+        "summary",
+        "successCriteria",
+        "assumptions",
+        "nonGoals",
+        "risks",
+        "tasks",
+        "createdAt"
+      ]
+    },
+    {
+      "path": "schemas/orchestration/task-graph.schema.json",
+      "id": "urn:sr-smith:schema:orchestration:task-graph:1.0.0",
+      "title": "TaskGraph",
+      "required": [
+        "schemaVersion",
+        "planId",
+        "tasks",
+        "edges",
+        "cycle"
+      ]
+    },
+    {
+      "path": "schemas/orchestration/task.schema.json",
+      "id": "urn:sr-smith:schema:orchestration:task:1.0.0",
+      "title": "Task",
+      "required": [
+        "schemaVersion",
+        "id",
+        "projectId",
+        "type",
+        "title",
+        "description",
+        "dependencies",
+        "status",
+        "acceptanceCriteria",
+        "inputs",
+        "budget",
+        "attempts",
+        "requiresApproval",
+        "operation"
+      ]
+    },
+    {
+      "path": "schemas/orchestration/ticket.schema.json",
+      "id": "urn:sr-smith:schema:orchestration:ticket:1.0.0",
+      "title": "Ticket",
+      "required": [
+        "schemaVersion",
+        "id",
+        "projectId",
+        "title",
+        "body",
+        "status",
+        "source",
+        "linkedTaskIds"
+      ]
+    },
+    {
+      "path": "schemas/tools/tool-call.schema.json",
+      "id": "urn:sr-smith:schema:tools:tool-call:1.0.0",
+      "title": "ToolCall",
+      "required": [
+        "id",
+        "name",
+        "arguments"
+      ]
+    },
+    {
+      "path": "schemas/tools/tool-manifest.schema.json",
+      "id": "urn:sr-smith:schema:tools:tool-manifest:1.0.0",
+      "title": "ToolManifest",
+      "required": [
+        "schemaVersion",
+        "id",
+        "name",
+        "version",
+        "description",
+        "source",
+        "inputSchema",
+        "capabilities",
+        "permissions",
+        "execution"
+      ]
+    },
+    {
+      "path": "schemas/tools/tool-result.schema.json",
+      "id": "urn:sr-smith:schema:tools:tool-result:1.0.0",
+      "title": "ToolResult",
+      "required": [
+        "schemaVersion",
+        "callId",
+        "toolId",
+        "status",
+        "latencyMs"
+      ]
+    }
+  ]
+}

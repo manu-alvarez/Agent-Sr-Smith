@@ -1,0 +1,97 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:memory:memory-record:1.0.0",
+  "title": "MemoryRecord",
+  "description": "Nota recuperable. No sustituye a SQLite. semantic sale de consolidar una nota de trabajo repetida.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id, mem_…",
+      "minLength": 1
+    },
+    "type": {
+      "description": "working es la nota de la ejecución. episodic es el episodio. semantic es un hecho consolidado. procedural es un procedimiento.",
+      "enum": [
+        "working",
+        "episodic",
+        "semantic",
+        "procedural"
+      ]
+    },
+    "projectId": {
+      "type": "string",
+      "description": "Proyecto, si la nota no es global."
+    },
+    "agentId": {
+      "type": "string",
+      "description": "Agente que la escribió."
+    },
+    "content": {
+      "type": "string",
+      "description": "Texto de la nota. Sin secretos.",
+      "minLength": 1
+    },
+    "provenance": {
+      "description": "De dónde sale. confidence entre 0 y 1. Ausente no es 1.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "source": {
+          "type": "string",
+          "description": "Fuente: orchestrator, semantic, procedure u otra.",
+          "minLength": 1
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "ISO-8601.",
+          "minLength": 20
+        },
+        "confidence": {
+          "type": "number",
+          "description": "0 a 1.",
+          "minimum": 0,
+          "maximum": 1
+        }
+      },
+      "required": [
+        "source",
+        "createdAt"
+      ]
+    },
+    "metadata": {
+      "description": "Metadatos libres, por ejemplo promotedFrom y occurrences.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "type",
+    "content",
+    "provenance",
+    "metadata"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "mem_1",
+      "type": "working",
+      "projectId": "prj_local",
+      "content": "El checksum se comprueba antes de reanudar.",
+      "provenance": {
+        "source": "orchestrator",
+        "createdAt": "2026-11-07T08:00:00.000Z",
+        "confidence": 1
+      },
+      "metadata": {}
+    }
+  ]
+}

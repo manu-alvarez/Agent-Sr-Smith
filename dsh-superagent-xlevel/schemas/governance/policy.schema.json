@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:governance:policy:1.0.0",
+  "title": "Policy",
+  "description": "Política de autonomía. Sin regla para una operación, decide() deniega. La copia ejecutable está en src/governance/policies y debe coincidir con config/policies/default.json.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "id": {
+      "type": "string",
+      "description": "Id, pol_default_autonomy en la de serie.",
+      "minLength": 1
+    },
+    "name": {
+      "type": "string",
+      "description": "Nombre visible.",
+      "minLength": 1
+    },
+    "version": {
+      "type": "string",
+      "description": "Versión de la política.",
+      "minLength": 1
+    },
+    "rules": {
+      "type": "array",
+      "description": "Reglas en orden de declaración. Una regla con modes gana a la regla general de la misma operación.",
+      "items": {
+        "description": "Una regla.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Id estable, por ejemplo deny-secrets.",
+            "minLength": 1
+          },
+          "operation": {
+            "description": "Clase de operación que la política puede permitir, denegar o mandar a aprobación.",
+            "enum": [
+              "analyze",
+              "sandbox-read",
+              "sandbox-write",
+              "test",
+              "git-write",
+              "network",
+              "secrets",
+              "external-delete",
+              "production-change"
+            ]
+          },
+          "effect": {
+            "description": "allow, deny o require-approval.",
+            "enum": [
+              "allow",
+              "deny",
+              "require-approval"
+            ]
+          },
+          "modes": {
+            "type": "array",
+            "description": "Si está, la regla solo aplica a esos modos.",
+            "items": {
+              "description": "Modo.",
+              "enum": [
+                "strict-local",
+                "local-runtime"
+              ]
+            }
+          },
+          "reason": {
+            "type": "string",
+            "description": "Motivo que ve el operador.",
+            "minLength": 1
+          }
+        },
+        "required": [
+          "id",
+          "operation",
+          "effect",
+          "reason"
+        ]
+      },
+      "minItems": 1
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "id",
+    "name",
+    "version",
+    "rules"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "id": "pol_default_autonomy",
+      "name": "Autonomía gobernada",
+      "version": "1.0.0",
+      "rules": [
+        {
+          "id": "deny-secrets",
+          "operation": "secrets",
+          "effect": "deny",
+          "reason": "Los secretos no entran en prompts, checkpoints, logs ni artefactos."
+        }
+      ]
+    }
+  ]
+}

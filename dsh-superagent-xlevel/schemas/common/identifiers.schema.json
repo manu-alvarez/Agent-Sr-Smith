@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:common:identifiers:1.0.0",
+  "title": "Identifier",
+  "description": "Id con prefijo de tres letras y guion bajo. createId usa estos prefijos.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Valor, por ejemplo exe_ab12.",
+      "pattern": "^[a-z]{3}_",
+      "minLength": 4
+    },
+    "prefix": {
+      "description": "Familia del id.",
+      "enum": [
+        "exe",
+        "pln",
+        "tsk",
+        "agt",
+        "evt",
+        "aud",
+        "chk",
+        "mem",
+        "tol",
+        "apr",
+        "ver",
+        "rec",
+        "pol"
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "prefix"
+  ],
+  "examples": [
+    {
+      "id": "exe_ab12",
+      "prefix": "exe"
+    }
+  ]
+}

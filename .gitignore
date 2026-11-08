@@ -1,0 +1,17 @@
+node_modules/
+dsh-superagent-xlevel/node_modules/
+.vercel/
+.output/
+dist/
+.grok/
+.tanstack/
+artifacts/
+attachments/
+screenshots/
+.project_id
+.node_modules.lock
+*.log
+.env
+.env.*
+!.env.example
+.dsh/

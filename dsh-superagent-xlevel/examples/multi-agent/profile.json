@@ -1,0 +1,33 @@
+{
+  "schemaVersion": "1.0.0",
+  "profileId": "full",
+  "mode": "strict-local",
+  "policy": "pol_default_autonomy",
+  "roles": [
+    "orchestrator",
+    "planner",
+    "architect",
+    "researcher",
+    "principal-engineer",
+    "developer",
+    "systems-engineer",
+    "security-engineer",
+    "debugger",
+    "qa-engineer",
+    "reviewer",
+    "performance-engineer",
+    "devops-engineer",
+    "data-engineer",
+    "knowledge-engineer",
+    "documentation-engineer",
+    "evaluator",
+    "watchdog",
+    "recovery-agent"
+  ],
+  "limits": {
+    "maxSteps": 64,
+    "maxParallel": 4,
+    "timeoutMs": 360000
+  },
+  "delegation": "El planner asigna un rol del perfil por tarea. Dos tareas sin dependencia pueden ir en el mismo lote, hasta maxParallel."
+}

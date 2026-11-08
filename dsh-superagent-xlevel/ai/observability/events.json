@@ -1,0 +1,10 @@
+{
+  "schemaVersion": "1.0.0",
+  "producer": "orchestrator",
+  "eventType": "execution.<fase>",
+  "required": ["eventId", "eventType", "schemaVersion", "aggregateId", "correlationId", "timestamp", "payload", "metadata"],
+  "payload": ["title", "detail", "taskId"],
+  "usage": ["steps", "toolCalls", "referenceCalls"],
+  "timelineLevels": ["info", "warn", "error", "ok"],
+  "notMeasured": ["rss", "heapUsed", "gpu", "networkBytes"]
+}

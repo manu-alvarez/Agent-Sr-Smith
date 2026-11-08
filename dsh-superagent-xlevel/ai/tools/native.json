@@ -1,0 +1,131 @@
+{
+  "schemaVersion": "1.0.0",
+  "tools": [
+    {
+      "name": "workspace.read",
+      "version": "1.0.0",
+      "description": "Lee un archivo del sandbox virtual.",
+      "operation": "sandbox-read",
+      "source": {
+        "type": "native",
+        "identifier": "workspace.read"
+      },
+      "permissions": {
+        "network": false,
+        "filesystem": true,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": true
+      }
+    },
+    {
+      "name": "workspace.write",
+      "version": "1.0.0",
+      "description": "Escribe un archivo bajo sandbox/.",
+      "operation": "sandbox-write",
+      "source": {
+        "type": "native",
+        "identifier": "workspace.write"
+      },
+      "permissions": {
+        "network": false,
+        "filesystem": true,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": false
+      }
+    },
+    {
+      "name": "knowledge.search",
+      "version": "1.0.0",
+      "description": "Busca en el corpus local.",
+      "operation": "analyze",
+      "source": {
+        "type": "native",
+        "identifier": "knowledge.search"
+      },
+      "permissions": {
+        "network": false,
+        "filesystem": false,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": true
+      }
+    },
+    {
+      "name": "policy.explain",
+      "version": "1.0.0",
+      "description": "Explica las reglas de autonomía.",
+      "operation": "analyze",
+      "source": {
+        "type": "native",
+        "identifier": "policy.explain"
+      },
+      "permissions": {
+        "network": false,
+        "filesystem": false,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": true
+      }
+    },
+    {
+      "name": "memory.recall",
+      "version": "1.0.0",
+      "description": "Recupera memoria local de la ejecución.",
+      "operation": "analyze",
+      "source": {
+        "type": "native",
+        "identifier": "memory.recall"
+      },
+      "permissions": {
+        "network": false,
+        "filesystem": false,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": true
+      }
+    },
+    {
+      "name": "memory.remember",
+      "version": "1.0.0",
+      "description": "Guarda una nota de trabajo.",
+      "operation": "analyze",
+      "source": {
+        "type": "native",
+        "identifier": "memory.remember"
+      },
+      "permissions": {
+        "network": false,
+        "filesystem": false,
+        "shell": false,
+        "requiresApproval": false
+      },
+      "execution": {
+        "timeoutMs": 5000,
+        "retryable": false,
+        "idempotent": true
+      }
+    }
+  ]
+}

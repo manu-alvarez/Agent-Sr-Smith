@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:tools:tool-result:1.0.0",
+  "title": "ToolResult",
+  "description": "Resultado de Tool Fabric. denied no es un fallo transitorio: la política no se reintenta cambiando el texto.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "callId": {
+      "type": "string",
+      "description": "Llamada.",
+      "minLength": 1
+    },
+    "toolId": {
+      "type": "string",
+      "description": "Manifiesto.",
+      "minLength": 1
+    },
+    "status": {
+      "description": "completed, denied o failed.",
+      "enum": [
+        "completed",
+        "denied",
+        "failed"
+      ]
+    },
+    "output": {
+      "description": "Salida si status es completed."
+    },
+    "error": {
+      "description": "Error normalizado. retryable solo es true si repetir no cambia el estado.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "description": "Código estable, por ejemplo policy_denied o unknown_tool.",
+          "minLength": 1
+        },
+        "message": {
+          "type": "string",
+          "description": "Explicación sin secretos.",
+          "minLength": 1
+        },
+        "retryable": {
+          "type": "boolean",
+          "description": "True solo si un reintento es seguro."
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "retryable"
+      ]
+    },
+    "latencyMs": {
+      "type": "number",
+      "description": "Tiempo de pared.",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "callId",
+    "toolId",
+    "status",
+    "latencyMs"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "callId": "tol_1",
+      "toolId": "tol_workspace.write",
+      "status": "completed",
+      "output": {
+        "path": "sandbox/checkpoint.json"
+      },
+      "latencyMs": 1
+    }
+  ]
+}

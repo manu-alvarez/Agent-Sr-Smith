@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:models:model-request:1.0.0",
+  "title": "ModelRequest",
+  "description": "Petición única para cualquier proveedor. El core no importa el SDK: el adaptador traduce este objeto.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "requestId": {
+      "type": "string",
+      "description": "Id de la petición.",
+      "minLength": 1
+    },
+    "sessionId": {
+      "type": "string",
+      "description": "Sesión.",
+      "minLength": 1
+    },
+    "agentId": {
+      "type": "string",
+      "description": "Agente que pide la inferencia.",
+      "minLength": 1
+    },
+    "model": {
+      "description": "Proveedor y modelo. El runtime de referencia usa provider reference y modelId dsh-reference-1.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "provider": {
+          "type": "string",
+          "description": "Identificador del adaptador: reference, ollama, deepseek, openai, anthropic, google u openai-compatible.",
+          "minLength": 1
+        },
+        "modelId": {
+          "type": "string",
+          "description": "Id del modelo en ese proveedor. No implica que esté verificado.",
+          "minLength": 1
+        },
+        "fallback": {
+          "type": "array",
+          "description": "Adaptadores a los que se puede caer si el primario falla. No se usan en strict-local.",
+          "items": {
+            "type": "string",
+            "description": "Id de proveedor."
+          }
+        }
+      },
+      "required": [
+        "provider",
+        "modelId"
+      ]
+    },
+    "messages": {
+      "type": "array",
+      "description": "Historial ya normalizado.",
+      "items": {
+        "description": "Mensaje.",
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "content"
+        ],
+        "properties": {
+          "role": {
+            "description": "Rol.",
+            "enum": [
+              "system",
+              "user",
+              "assistant",
+              "tool"
+            ]
+          },
+          "content": {
+            "description": "Contenido."
+          }
+        }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "Definiciones opcionales. En strict-local no salen a la red.",
+      "items": {
+        "description": "Herramienta ofrecida al modelo.",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Nombre.",
+            "minLength": 1
+          },
+          "description": {
+            "type": "string",
+            "description": "Qué hace.",
+            "minLength": 1
+          },
+          "inputSchema": {
+            "description": "JSON Schema de entrada.",
+            "type": "object",
+            "additionalProperties": true,
+            "properties": {}
+          }
+        },
+        "required": [
+          "name",
+          "description",
+          "inputSchema"
+        ]
+      }
+    },
+    "parameters": {
+      "description": "Parámetros opcionales. Ausentes significa el defecto del adaptador, no un modo oculto.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "description": "Temperatura si el proveedor la admite.",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxOutputTokens": {
+          "type": "number",
+          "description": "Tope de salida.",
+          "minimum": 1
+        },
+        "reasoningEffort": {
+          "type": "string",
+          "description": "Solo si el proveedor documenta el campo. No se inventa."
+        },
+        "responseFormat": {
+          "description": "Formato pedido.",
+          "enum": [
+            "text",
+            "json"
+          ]
+        }
+      }
+    },
+    "constraints": {
+      "description": "Límites de la llamada.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "timeoutMs": {
+          "type": "number",
+          "description": "Tiempo máximo.",
+          "minimum": 1
+        },
+        "maxRetries": {
+          "type": "number",
+          "description": "Reintentos de transporte.",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "timeoutMs",
+        "maxRetries"
+      ]
+    },
+    "metadata": {
+      "description": "Metadatos libres. Sin claves ni tokens.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "requestId",
+    "sessionId",
+    "agentId",
+    "model",
+    "messages",
+    "parameters",
+    "constraints",
+    "metadata"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "requestId": "req_1",
+      "sessionId": "ses_1",
+      "agentId": "agt_developer",
+      "model": {
+        "provider": "reference",
+        "modelId": "dsh-reference-1"
+      },
+      "messages": [
+        {
+          "role": "user",
+          "content": "Escribe el checkpoint en el sandbox."
+        }
+      ],
+      "parameters": {
+        "responseFormat": "json"
+      },
+      "constraints": {
+        "timeoutMs": 30000,
+        "maxRetries": 0
+      },
+      "metadata": {
+        "profileId": "engineering"
+      }
+    }
+  ]
+}

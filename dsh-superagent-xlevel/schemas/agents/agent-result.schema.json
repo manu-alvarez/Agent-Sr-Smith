@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:sr-smith:schema:agents:agent-result:1.0.0",
+  "title": "AgentResult",
+  "description": "Lo que un agente devuelve de una tarea. evidence no sustituye la verificación independiente.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": {
+      "const": "1.0.0",
+      "description": "Versión de contrato. Hoy solo 1.0.0."
+    },
+    "agentId": {
+      "type": "string",
+      "description": "Agente que respondió.",
+      "minLength": 1
+    },
+    "taskId": {
+      "type": "string",
+      "description": "Tarea cubierta.",
+      "minLength": 1
+    },
+    "status": {
+      "description": "Estado declarado por el agente. El evaluador puede rechazarlo.",
+      "enum": [
+        "completed",
+        "failed",
+        "blocked"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "description": "Resumen. No es evidencia.",
+      "minLength": 1
+    },
+    "outputs": {
+      "description": "Salidas estructuradas.",
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {}
+    },
+    "evidence": {
+      "type": "array",
+      "description": "Citas o comprobaciones. Un criterio sin elemento aquí falla.",
+      "items": {
+        "type": "string",
+        "description": "Pieza de evidencia.",
+        "minLength": 1
+      }
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "agentId",
+    "taskId",
+    "status",
+    "summary",
+    "outputs",
+    "evidence"
+  ],
+  "examples": [
+    {
+      "schemaVersion": "1.0.0",
+      "agentId": "agt_developer",
+      "taskId": "tsk_checkpoint",
+      "status": "completed",
+      "summary": "Checksum escrito en el sandbox.",
+      "outputs": {
+        "path": "sandbox/checkpoint.json"
+      },
+      "evidence": [
+        "checksum estable en dos lecturas"
+      ]
+    }
+  ]
+}
