@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "data",
+  "name": "Datos",
+  "summary": "Modela tablas, archivos o un corpus y comprueba que los números salen de ahí.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": ["data-engineer", "knowledge-engineer", "qa-engineer", "evaluator"],
+  "tools": ["workspace.read", "workspace.write", "knowledge.search"],
+  "capabilities": ["model", "lineage"],
+  "limits": { "maxSteps": 28, "maxParallel": 3, "timeoutMs": 180000 }
+}

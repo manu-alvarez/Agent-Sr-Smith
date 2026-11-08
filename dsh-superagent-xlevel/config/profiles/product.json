@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "product",
+  "name": "Producto",
+  "summary": "Decide qué se construye, para quién, qué queda fuera y cómo se cuenta.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": ["planner", "architect", "researcher", "documentation-engineer", "evaluator"],
+  "tools": ["knowledge.search", "workspace.read"],
+  "capabilities": ["scope", "narrative"],
+  "limits": { "maxSteps": 24, "maxParallel": 3, "timeoutMs": 180000 }
+}

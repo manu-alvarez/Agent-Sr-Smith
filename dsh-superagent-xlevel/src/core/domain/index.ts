@@ -8,7 +8,10 @@ export type ProfileId =
   | "autonomous"
   | "security"
   | "full"
-  | "headless";
+  | "headless"
+  | "product"
+  | "data"
+  | "ops";
 
 export type Phase =
   | "received"

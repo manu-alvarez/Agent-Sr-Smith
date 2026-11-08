@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "id": "engineering",
   "name": "Engineering X",
-  "summary": "Diseño, implementación en sandbox, pruebas y revisión independiente.",
+  "summary": "Diseña, programa en la carpeta del proyecto, prueba y deja que otra parte revise el resultado.",
   "policy": "pol_default_autonomy",
   "modeDefault": "strict-local",
   "roles": [

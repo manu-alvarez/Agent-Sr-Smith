@@ -10,7 +10,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 REQUIRED_CASE = {"id", "objective", "profileId", "mode", "expect"}
 EXPECT_KEYS = {"status", "sensitive", "mode", "sandboxOnly", "secretsRedacted", "referenceLimitation"}
-PROFILES = {"research", "engineering", "autonomous", "security", "full", "headless"}
+PROFILES = {"research", "engineering", "autonomous", "security", "full", "headless", "product", "data", "ops"}
 MODES = {"strict-local", "local-runtime"}
 
 
@@ -85,7 +85,7 @@ def main() -> int:
     if not isinstance(specs, list) or len(specs) != 19:
         problems.append("se esperaban 19 specs de agente")
     if not isinstance(profiles, list) or {item["id"] for item in profiles} != PROFILES:
-        problems.append("los seis perfiles no están en ai/agents/profiles.json")
+        problems.append("los perfiles no están en ai/agents/profiles.json")
 
     if problems:
         print("\n".join(problems))

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "1.0.0",
+  "id": "ops",
+  "name": "Operación",
+  "summary": "Deja el proceso funcionando en local: automatiza, vigila y recupera si falla.",
+  "policy": "pol_default_autonomy",
+  "modeDefault": "strict-local",
+  "roles": ["devops-engineer", "systems-engineer", "qa-engineer", "watchdog", "recovery-agent"],
+  "tools": ["workspace.read", "workspace.write"],
+  "capabilities": ["automation", "recovery"],
+  "limits": { "maxSteps": 32, "maxParallel": 3, "timeoutMs": 240000 }
+}

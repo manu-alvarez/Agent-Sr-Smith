@@ -23,30 +23,55 @@ export const FRAMEWORKS = [
 ] as const;
 
 export const IDES = [
+  { id: "opencode", label: "OpenCode", summary: "opencode.json, agente y skill en .opencode/." },
+  { id: "codex", label: "Codex", summary: "Lee AGENTS.md." },
+  { id: "antigravity", label: "Antigravity", summary: "Lee AGENTS.md, GEMINI.md y .agents/rules." },
+  { id: "windsurf", label: "Windsurf", summary: "Lee AGENTS.md." },
+  { id: "copilot", label: "Copilot", summary: "Lee AGENTS.md y .github/copilot-instructions.md." },
+  { id: "cline", label: "Cline", summary: "Lee AGENTS.md y .clinerules/." },
+  { id: "trae", label: "Trae", summary: "Lee AGENTS.md y .trae/rules/." },
+  { id: "claude", label: "Claude Code", summary: "Lee CLAUDE.md. Si existe, no usa AGENTS.md." },
+  { id: "gemini", label: "Gemini CLI", summary: "Lee GEMINI.md." },
+  { id: "cursor", label: "Cursor", summary: "Lee .cursor/rules y también AGENTS.md." },
+  { id: "continue", label: "Continue", summary: "Lee .continue/rules." },
+  { id: "vscode", label: "VS Code", summary: "Tareas y depuración en .vscode. No es un agente." },
+] as const;
+
+export const IDE_GROUPS = [
   {
-    id: "opencode",
-    label: "OpenCode",
-    summary: "Principal. opencode.json, agente, comando test y skill en .opencode/, más AGENTS.md.",
+    id: "agents",
+    label: "AGENTS.md",
+    members: "OpenCode, Codex, Antigravity, Windsurf, Copilot, Cline y Trae",
+    ides: ["opencode", "codex", "antigravity", "windsurf", "copilot", "cline", "trae"],
+    files: "AGENTS.md, y la carpeta propia de cada uno",
   },
   {
     id: "claude",
     label: "Claude Code",
-    summary: "CLAUDE.md y permisos para npm install, npm test y npm start.",
+    members: "Claude Code",
+    ides: ["claude"],
+    files: "CLAUDE.md",
   },
   {
-    id: "codex",
-    label: "Codex",
-    summary: "AGENTS.md, que es el archivo de instrucciones que lee Codex.",
+    id: "gemini",
+    label: "Gemini CLI",
+    members: "Gemini CLI y Antigravity también lo leen",
+    ides: ["gemini"],
+    files: "GEMINI.md",
   },
   {
     id: "cursor",
     label: "Cursor",
-    summary: "Regla de proyecto en .cursor/rules.",
+    members: "Cursor",
+    ides: ["cursor"],
+    files: ".cursor/rules/proyecto.mdc",
   },
   {
-    id: "vscode",
-    label: "VS Code",
-    summary: "Tareas y depuración en .vscode.",
+    id: "editor",
+    label: "Editor",
+    members: "VS Code y Continue",
+    ides: ["vscode", "continue"],
+    files: ".vscode/ y .continue/rules/",
   },
 ] as const;
 
@@ -292,7 +317,7 @@ function ideFiles(input: StarterInput, slug: string): Record<string, string> {
   const files: Record<string, string> = {};
   const objective = input.objective.trim();
   const guide = instructions(slug, objective);
-  if (selected(input, "opencode") || selected(input, "codex")) {
+  if (selected(input, "opencode") || selected(input, "codex") || selected(input, "antigravity") || selected(input, "windsurf") || selected(input, "copilot") || selected(input, "cline") || selected(input, "trae") || selected(input, "cursor")) {
     files["AGENTS.md"] = guide;
   }
   if (selected(input, "opencode")) {
@@ -382,6 +407,14 @@ alwaysApply: true
 ${guide}
 `;
   }
+  if (selected(input, "antigravity") || selected(input, "gemini")) {
+    files["GEMINI.md"] = guide;
+    files[".agents/rules/proyecto.md"] = guide;
+  }
+  if (selected(input, "trae")) files[".trae/rules/proyecto.md"] = guide;
+  if (selected(input, "cline")) files[".clinerules/proyecto.md"] = guide;
+  if (selected(input, "copilot")) files[".github/copilot-instructions.md"] = guide;
+  if (selected(input, "continue")) files[".continue/rules/proyecto.md"] = guide;
   return files;
 }
 

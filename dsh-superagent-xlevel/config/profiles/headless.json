@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "id": "headless",
   "name": "Headless X",
-  "summary": "El mismo ciclo, pensado para CLI sin interfaz.",
+  "summary": "Un comando de terminal, sin pantalla.",
   "policy": "pol_default_autonomy",
   "modeDefault": "strict-local",
   "roles": [

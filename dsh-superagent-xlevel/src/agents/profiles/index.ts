@@ -14,7 +14,7 @@ export const PROFILES: ProfileDefinition[] = [
   {
     id: "research",
     name: "Research X",
-    summary: "Investigación, síntesis y validación de fuentes.",
+    summary: "Investiga un tema, cita lo que encuentra y no escribe el programa hasta que la pregunta esté respondida.",
     roles: ["planner", "researcher", "knowledge-engineer", "evaluator", "watchdog"],
     tools: ["knowledge.search", "memory.recall", "memory.remember"],
     capabilities: ["research", "citation", "synthesis"],
@@ -23,7 +23,7 @@ export const PROFILES: ProfileDefinition[] = [
   {
     id: "engineering",
     name: "Engineering X",
-    summary: "Diseño, implementación en sandbox, pruebas y revisión independiente.",
+    summary: "Diseña, programa en la carpeta del proyecto, prueba y deja que otra parte revise el resultado.",
     roles: [
       "planner",
       "architect",
@@ -41,7 +41,7 @@ export const PROFILES: ProfileDefinition[] = [
   {
     id: "autonomous",
     name: "Autonomous X",
-    summary: "Ejecución prolongada con checkpoints, watchdog y recuperación.",
+    summary: "Sigue una tarea larga, guarda el avance y retoma si el proceso se corta.",
     roles: [
       "orchestrator",
       "planner",
@@ -58,7 +58,7 @@ export const PROFILES: ProfileDefinition[] = [
   {
     id: "security",
     name: "Security X",
-    summary: "Auditoría defensiva, modelo de amenazas y revisión de privilegios.",
+    summary: "Revisa quién puede hacer qué, qué datos se tocan y qué no debe poder ocurrir.",
     roles: ["planner", "security-engineer", "systems-engineer", "reviewer", "evaluator", "watchdog"],
     tools: ["policy.explain", "workspace.read", "knowledge.search"],
     capabilities: ["threat-model", "least-privilege"],
@@ -67,7 +67,7 @@ export const PROFILES: ProfileDefinition[] = [
   {
     id: "full",
     name: "Sr.Smith Full",
-    summary: "Todos los roles disponibles, con asignación según el objetivo.",
+    summary: "Entran todos los roles. Úsalo cuando no quieras dejar fuera ninguna parte del trabajo.",
     roles: [
       "orchestrator",
       "planner",
@@ -96,11 +96,38 @@ export const PROFILES: ProfileDefinition[] = [
   {
     id: "headless",
     name: "Headless X",
-    summary: "El mismo ciclo, pensado para CLI sin interfaz.",
+    summary: "Un comando de terminal, sin pantalla.",
     roles: ["planner", "developer", "qa-engineer", "evaluator", "watchdog"],
     tools: ["workspace.read", "workspace.write"],
     capabilities: ["cli", "verification"],
     limits: { maxSteps: 24, maxParallel: 2, timeoutMs: 180_000 },
+  },
+  {
+    id: "product",
+    name: "Producto",
+    summary: "Decide qué se construye, para quién, qué queda fuera y cómo se cuenta.",
+    roles: ["planner", "architect", "researcher", "documentation-engineer", "evaluator"],
+    tools: ["knowledge.search", "workspace.read"],
+    capabilities: ["scope", "narrative"],
+    limits: { maxSteps: 24, maxParallel: 3, timeoutMs: 180_000 },
+  },
+  {
+    id: "data",
+    name: "Datos",
+    summary: "Modela tablas, archivos o un corpus y comprueba que los números salen de ahí.",
+    roles: ["data-engineer", "knowledge-engineer", "qa-engineer", "evaluator"],
+    tools: ["workspace.read", "workspace.write", "knowledge.search"],
+    capabilities: ["model", "lineage"],
+    limits: { maxSteps: 28, maxParallel: 3, timeoutMs: 180_000 },
+  },
+  {
+    id: "ops",
+    name: "Operación",
+    summary: "Deja el proceso funcionando en local: automatiza, vigila y recupera si falla.",
+    roles: ["devops-engineer", "systems-engineer", "qa-engineer", "watchdog", "recovery-agent"],
+    tools: ["workspace.read", "workspace.write"],
+    capabilities: ["automation", "recovery"],
+    limits: { maxSteps: 32, maxParallel: 3, timeoutMs: 240_000 },
   },
 ];
 

@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "id": "research",
   "name": "Research X",
-  "summary": "Investigación, síntesis y validación de fuentes.",
+  "summary": "Investiga un tema, cita lo que encuentra y no escribe el programa hasta que la pregunta esté respondida.",
   "policy": "pol_default_autonomy",
   "modeDefault": "strict-local",
   "roles": [

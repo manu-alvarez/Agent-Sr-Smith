@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "id": "full",
   "name": "Sr.Smith Full",
-  "summary": "Todos los roles disponibles, con asignación según el objetivo.",
+  "summary": "Entran todos los roles. Úsalo cuando no quieras dejar fuera ninguna parte del trabajo.",
   "policy": "pol_default_autonomy",
   "modeDefault": "strict-local",
   "roles": [

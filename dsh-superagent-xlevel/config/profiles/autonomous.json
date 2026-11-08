@@ -2,7 +2,7 @@
   "schemaVersion": "1.0.0",
   "id": "autonomous",
   "name": "Autonomous X",
-  "summary": "Ejecución prolongada con checkpoints, watchdog y recuperación.",
+  "summary": "Sigue una tarea larga, guarda el avance y retoma si el proceso se corta.",
   "policy": "pol_default_autonomy",
   "modeDefault": "strict-local",
   "roles": [

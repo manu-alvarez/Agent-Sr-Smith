@@ -56,7 +56,10 @@
         "autonomous",
         "security",
         "full",
-        "headless"
+        "headless",
+        "product",
+        "data",
+        "ops"
       ]
     },
     "objective": {

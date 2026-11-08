@@ -5,7 +5,7 @@ import { MatrixRain } from "./matrix-rain";
 import { AgentBuilder } from "./agent-builder";
 import { OllamaBar, storedOllamaHost } from "./ollama-bar";
 import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
-import { FRAMEWORKS, IDES, MOBILE_APPS, projectSlug, starterFiles, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
+import { FRAMEWORKS, IDE_GROUPS, IDES, MOBILE_APPS, projectSlug, starterFiles, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
 import { publicUrl } from "../../lib/public-url";
 import {
   CONTRACTS,
@@ -26,30 +26,54 @@ const SCAFFOLD_HREF = publicUrl("/sr-smith-c57fdd3.zip");
 
 const PRESETS: Array<{ id: string; label: string; profile: ProfileId; objective: string }> = [
   {
-    id: "checkpoint",
-    label: "Checkpoint",
+    id: "app",
+    label: "Una aplicación",
     profile: "engineering",
-    objective: "Implement a durable checkpoint store with checksum verification and resume.",
+    objective: "Quiero una aplicación para anotar gastos. El usuario escribe fecha, concepto e importe, y al volver a abrirla sigue viendo la lista. Está hecha cuando puedo añadir uno y verlo después de recargar.",
   },
   {
-    id: "threat",
-    label: "Amenazas",
-    profile: "security",
-    objective: "Audit tool permissions and produce a threat model for prompt injection and external delete.",
+    id: "command",
+    label: "Un comando",
+    profile: "headless",
+    objective: "Quiero un comando de terminal que reciba una carpeta y diga cuántos archivos hay y cuánto ocupan. Está hecho cuando npm test cubre una carpeta vacía y otra con dos archivos.",
+  },
+  {
+    id: "api",
+    label: "Un servicio",
+    profile: "engineering",
+    objective: "Quiero un servicio local con dos rutas: una para crear una nota y otra para listarlas. Está hecho cuando una llamada crea la nota y la siguiente la devuelve.",
   },
   {
     id: "research",
-    label: "Corpus",
+    label: "Entender un tema",
     profile: "research",
-    objective: "Research the local policy boundaries, sandbox contract and capability registry.",
+    objective: "Necesito entender cómo funciona el inicio de sesión de este proyecto antes de tocarlo. Quiero las preguntas abiertas, de dónde sale cada respuesta y qué decisión puedo tomar con eso.",
   },
   {
-    id: "full",
-    label: "Plataforma",
-    profile: "full",
-    objective: "Design the local agent platform: architecture, sandbox change, tests, review and documentation.",
+    id: "fix",
+    label: "Arreglar un fallo",
+    profile: "engineering",
+    objective: "Al guardar, la lista se vacía. Esperaba ver lo que acabo de escribir. Se reproduce recargando la página. Está arreglado cuando recargar conserva la lista y hay una prueba que lo demuestra.",
+  },
+  {
+    id: "risk",
+    label: "Revisar riesgos",
+    profile: "security",
+    objective: "Revisa quién puede leer y borrar estos datos, qué pasa si alguien pega una instrucción dentro de un campo y qué no debe poder ocurrir nunca.",
   },
 ];
+
+const PROFILE_FACE: Record<string, { title: string; when: string }> = {
+  research: { title: "Investigar", when: "Primero hay que entender el tema. Busca y cita. No escribe el programa." },
+  engineering: { title: "Construir", when: "Hay que diseñar, programar, probar y revisar el resultado." },
+  autonomous: { title: "Seguir hasta el final", when: "La tarea es larga. Guarda el avance y retoma si se corta." },
+  security: { title: "Revisar riesgos", when: "Quién puede hacer qué, qué datos se tocan y qué no debe ocurrir." },
+  full: { title: "Equipo completo", when: "No quieres dejar ningún rol fuera." },
+  headless: { title: "Solo la terminal", when: "Un comando, sin pantalla." },
+  product: { title: "Definir el producto", when: "Todavía se decide qué se construye, para quién y qué queda fuera." },
+  data: { title: "Datos", when: "Hay tablas, archivos o documentos que hay que ordenar y comprobar." },
+  ops: { title: "Dejarlo funcionando", when: "Hay que automatizar, vigilar y recuperar el proceso en tu máquina." },
+};
 
 const NAV: Array<{ id: View; label: string; icon: typeof Play }> = [
   { id: "scaffold", label: "Scaffolding", icon: Download },
@@ -92,7 +116,7 @@ function statusClass(status: string): string {
 export function Console() {
   const [projectName, setProjectName] = useState("mi-proyecto");
   const [framework, setFramework] = useState<FrameworkId>("cli");
-  const [ides, setIdes] = useState<IdeId[]>(["opencode"]);
+  const [ides, setIdes] = useState<IdeId[]>(["opencode", "codex", "antigravity", "windsurf", "copilot", "cline", "trae"]);
   const [mobile, setMobile] = useState<MobileId[]>([]);
   const [surface, setSurface] = useState<"computer" | "mobile">("computer");
   const [view, setView] = useState<View>("mission");
@@ -103,7 +127,7 @@ export function Console() {
   const [expertNote, setExpertNote] = useState<string | null>(null);
   const [modelNote, setModelNote] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
-  const [objective, setObjective] = useState(PRESETS[0]?.objective ?? "");
+  const [objective, setObjective] = useState("");
   const [report, setReport] = useState<ExecutionReport | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [packaging, setPackaging] = useState(false);
@@ -360,38 +384,41 @@ export function Console() {
                   })}
                 </div>
                 <p className="mt-4 text-xs font-medium tracking-wide text-muted">ENTORNO</p>
-                <p className="mt-2 text-sm leading-relaxed text-muted">OpenCode viene elegido. Puedes añadir Claude Code, Codex, Cursor o VS Code.</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {IDES.map((item) => {
-                    const active = ides.includes(item.id);
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Los que leen el mismo archivo van juntos. AGENTS.md ya viene elegido.
+                </p>
+                <div className="mt-3 flex flex-col gap-2">
+                  {IDE_GROUPS.map((group) => {
+                    const members = group.ides as readonly IdeId[];
+                    const active = members.every((id) => ides.includes(id));
                     return (
                       <button
-                        key={item.id}
+                        key={group.id}
                         type="button"
                         aria-pressed={active}
                         onClick={() =>
                           setIdes((current) => {
-                            if (current.includes(item.id)) {
-                              return current.length === 1 ? current : current.filter((id) => id !== item.id);
-                            }
-                            return [...current, item.id];
+                            const on = members.every((id) => current.includes(id));
+                            const next = on
+                              ? current.filter((id) => !members.includes(id))
+                              : [...new Set([...current, ...members])];
+                            return next.length > 0 ? next : current;
                           })
                         }
                         className={
-                          "h-11 rounded-full border px-3 text-sm " +
+                          "rounded-panel border px-3 py-3 text-left " +
                           (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
                         }
                       >
-                        {item.label}
+                        <span className="block text-sm font-medium">{group.label}</span>
+                        <span className={"mt-1 block text-sm leading-relaxed " + (active ? "text-ink/85" : "text-muted")}>
+                          {group.members}
+                        </span>
+                        <span className={"mt-1 block font-mono text-xs " + (active ? "text-ink/75" : "text-fg")}>{group.files}</span>
                       </button>
                     );
                   })}
                 </div>
-                <ul className="mt-3 flex flex-col gap-1 text-sm leading-relaxed text-muted">
-                  {IDES.filter((item) => ides.includes(item.id)).map((item) => (
-                    <li key={item.id}>{item.summary}</li>
-                  ))}
-                </ul>
                   </>
                 ) : (
                   <>
@@ -431,34 +458,49 @@ export function Console() {
                 )}
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
-                <p className="text-xs font-medium tracking-wide text-muted">PERFIL</p>
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {PROFILES.map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setProfileId(item.id)}
-                      className={
-                        "h-11 rounded-full border px-3 text-sm " +
-                        (item.id === profileId ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
-                      }
-                    >
-                      {item.name}
-                    </button>
-                  ))}
+                <p className="text-xs font-medium tracking-wide text-muted">QUIÉN LO HACE</p>
+                <div className="mt-3 flex flex-col gap-2">
+                  {PROFILES.map((item) => {
+                    const face = PROFILE_FACE[item.id];
+                    const active = item.id === profileId;
+                    const names = item.roles
+                      .map((role) => ROLES.find((entry) => entry.role === role)?.name ?? role)
+                      .join(", ");
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => setProfileId(item.id)}
+                        className={
+                          "rounded-panel border px-3 py-3 text-left " +
+                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
+                        }
+                      >
+                        <span className="block text-sm font-medium">{face?.title ?? item.name}</span>
+                        <span className={"mt-1 block text-sm leading-relaxed " + (active ? "text-ink/85" : "text-muted")}>
+                          {face?.when ?? item.summary}
+                        </span>
+                        {active && <span className={"mt-2 block text-xs leading-relaxed " + (active ? "text-ink/75" : "text-muted")}>{names}</span>}
+                      </button>
+                    );
+                  })}
                 </div>
-                <p className="mt-3 text-sm leading-relaxed text-muted">{profile?.summary}</p>
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
                 <label htmlFor="objective" className="text-xs font-medium tracking-wide text-muted">
-                  OBJETIVO
+                  QUÉ QUIERES CONSEGUIR
                 </label>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Escribe el resultado, para quién es y cómo sabrás que está hecho. Un ejemplo rellena el texto; luego cámbialo.
+                </p>
                 <textarea
                   id="objective"
                   value={objective}
                   onChange={(event) => setObjective(event.target.value)}
                   rows={6}
-                  className="mt-3 w-full resize-y rounded-panel border border-line bg-bg p-3 text-sm leading-relaxed text-fg outline-none focus:border-signal"
+                  placeholder="Ejemplo: una lista de gastos con fecha, concepto e importe. Está hecho cuando añado uno y sigue ahí al recargar."
+                  className="mt-3 w-full resize-y rounded-panel border border-line bg-bg p-3 text-sm leading-relaxed text-fg outline-none placeholder:text-muted focus:border-signal"
                 />
                 <div className="mt-3 flex flex-wrap gap-2">
                   {PRESETS.map((preset) => {
@@ -645,6 +687,9 @@ function StartGuide({
   const ideLabel = IDES.filter((item) => ide.includes(item.id))
     .map((item) => item.label)
     .join(", ");
+  const ideFiles = IDE_GROUPS.filter((group) => (group.ides as readonly string[]).some((id) => ide.includes(id as IdeId)))
+    .map((group) => `${group.label}: ${group.files}`)
+    .join(". ");
   const phones = MOBILE_APPS.filter((item) => mobile.includes(item.id));
   return (
     <section className="rounded-panel border border-line bg-surface p-4">
@@ -659,17 +704,23 @@ function StartGuide({
         ) : (
           <>
         <li>
-          <span className="text-muted">Entorno · {ideLabel}.</span> Abre <span className="font-mono">proyectos/{slug}</span>.
+          <span className="text-muted">1. Abre la carpeta.</span> Descomprime el ZIP y abre{" "}
+          <span className="font-mono">proyectos/{slug}</span>
+          {ideLabel ? ` con ${ideLabel}` : ""}.
         </li>
         <li>
-          <span className="text-muted">Framework · {frameworkLabel}.</span>{" "}
+          <span className="text-muted">2. El entorno lee sus archivos.</span> {ideFiles}
+        </li>
+        <li>
+          <span className="text-muted">3. Comprueba que arranca.</span>{" "}
+          <span className="font-mono">{frameworkLabel}</span>:{" "}
           <span className="font-mono">npm install && npm test && npm start</span>
         </li>
           </>
         )}
         <li>
-          <span className="text-muted">CLI.</span> En la raíz <span className="font-mono">sr-smith/</span>:{" "}
-          <span className="font-mono">npm test</span> y <span className="font-mono">src/cli/index.ts doctor</span>
+          <span className="text-muted">Opcional.</span> El plano de control, en la raíz{" "}
+          <span className="font-mono">sr-smith/</span>, no hace falta para empezar este proyecto.
         </li>
       </ol>
     </section>
