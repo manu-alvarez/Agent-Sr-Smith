@@ -92,6 +92,7 @@ export function Console() {
   const [ides, setIdes] = useState<IdeId[]>(["opencode"]);
   const [mobile, setMobile] = useState<MobileId[]>([]);
   const [view, setView] = useState<View>("mission");
+  const [details, setDetails] = useState(false);
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
   const [objective, setObjective] = useState(PRESETS[0]?.objective ?? "");
   const [report, setReport] = useState<ExecutionReport | null>(null);
@@ -102,6 +103,7 @@ export function Console() {
   const rules = useMemo(() => explainPolicy(), []);
   const slug = projectSlug(projectName);
   const ready = projectName.trim().length > 0 && objective.trim().length > 0;
+  const step: 1 | 2 | 3 = report ? 3 : ready ? 2 : 1;
 
   function execute(nextObjective = objective, nextProfile = profileId) {
     if (!nextObjective.trim() || !projectName.trim()) {
@@ -139,7 +141,7 @@ export function Console() {
           <p className="matrix-title font-mono text-xs tracking-widest text-signal">SR.SMITH · 1.0</p>
           <h1 className="matrix-title mt-2 max-w-xl text-4xl font-semibold tracking-tight text-signal sm:text-5xl">Crea tu proyecto y llévatelo</h1>
           <p className="mt-3 max-w-xl text-sm leading-relaxed text-[#ebe6d6]/90">
-            Eliges qué construir, el entorno y el objetivo. El ZIP trae el código, las pruebas y los archivos para abrirlo donde trabajas.
+            Elige qué construir, prepara el paquete y descárgalo. El ZIP trae el código, las pruebas y los archivos para abrirlo donde trabajas.
           </p>
         </div>
         <div className="matrix-line absolute inset-x-0 bottom-0" />
@@ -149,18 +151,53 @@ export function Console() {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-mono text-xs tracking-widest text-signal">SR.SMITH</p>
             <div className="flex min-w-0 flex-col items-start gap-2 sm:items-end">
-              <a
-                href={SCAFFOLD_HREF}
-                download="sr-smith-c57fdd3.zip"
-                className="inline-flex h-11 items-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink"
+              <button
+                type="button"
+                aria-pressed={details}
+                onClick={() => {
+                  setDetails((open) => !open);
+                  setView("mission");
+                }}
+                className={
+                  "inline-flex h-11 items-center rounded-full border px-4 text-sm " +
+                  (details ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg")
+                }
               >
-                <Download className="size-4" aria-hidden="true" />
-                Descargar plano base
-              </a>
-              <p className="max-w-full break-all font-mono text-xs text-muted">Sin tu proyecto. El paquete de la misión sale al ejecutar.</p>
+                {details ? "Volver a tu proyecto" : "Ver cómo decide"}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setDetails(true);
+                  setView("scaffold");
+                }}
+                className="text-left font-mono text-xs text-muted underline-offset-2 hover:underline"
+              >
+                Plano base, sin tu proyecto
+              </button>
             </div>
           </div>
-          <nav className="flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Secciones">
+          <ol className="grid grid-cols-3 gap-2" aria-label="Camino">
+            {(
+              [
+                [1, "Elige"],
+                [2, "Prepara"],
+                [3, "Descarga"],
+              ] as const
+            ).map(([number, label]) => (
+              <li
+                key={number}
+                className={
+                  "rounded-panel border px-3 py-2 text-sm " +
+                  (step === number ? "border-signal bg-signal text-ink" : "border-line bg-surface text-muted")
+                }
+              >
+                <span className="font-mono text-xs">{number}</span> {label}
+              </li>
+            ))}
+          </ol>
+          {details && (
+          <nav className="flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Cómo decide">
             {NAV.map((item) => {
               const Icon = item.icon;
               const active = view === item.id;
@@ -180,12 +217,13 @@ export function Console() {
               );
             })}
           </nav>
+          )}
         </div>
       </header>
 
       <div className="mx-auto min-w-0 max-w-6xl px-4 py-6 sm:px-6">
-        {view === "scaffold" && <Scaffold />}
-        {view === "mission" && (
+        {details && view === "scaffold" && <Scaffold />}
+        {(!details || view === "mission") && (
           <section className="grid min-w-0 gap-4 lg:grid-cols-5">
             <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
               <div className="rounded-panel border border-line bg-surface p-4">
@@ -355,14 +393,12 @@ export function Console() {
                   className="mt-4 inline-flex h-11 w-full items-center justify-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink disabled:opacity-60"
                 >
                   <Play className="size-4" aria-hidden="true" />
-                  Ejecutar en strict-local
+                  Preparar mi proyecto
                 </button>
                 {error && <p className="mt-3 text-sm text-danger">{error}</p>}
               </div>
             </div>
             <div className="flex min-w-0 flex-col gap-4 lg:col-span-3">
-              <ReportSummary report={report} />
-              <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} />
               <MissionDownload report={report} packaging={packaging} note={packageNote} onDownload={async () => {
                   if (!report || !profile) return;
                   setPackaging(true);
@@ -393,16 +429,22 @@ export function Console() {
                   }
                 }}
               />
-              <Timeline report={report} />
-              <Sandbox report={report} />
+              <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} />
+              {details && (
+                <>
+                  <ReportSummary report={report} />
+                  <Timeline report={report} />
+                  <Sandbox report={report} />
+                </>
+              )}
             </div>
           </section>
         )}
-        {view === "graph" && <Graph report={report} onRun={() => execute()} />}
-        {view === "agents" && <Agents profileRoles={profile?.roles ?? []} />}
-        {view === "policy" && <Policy rules={rules} />}
-        {view === "contracts" && <Contracts />}
-        {view === "architecture" && <Architecture />}
+        {details && view === "graph" && <Graph report={report} onRun={() => execute()} />}
+        {details && view === "agents" && <Agents profileRoles={profile?.roles ?? []} />}
+        {details && view === "policy" && <Policy rules={rules} />}
+        {details && view === "contracts" && <Contracts />}
+        {details && view === "architecture" && <Architecture />}
       </div>
       </div>
     </main>
@@ -530,12 +572,21 @@ function MissionDownload({
   note: string | null;
   onDownload: () => void;
 }) {
-  if (!report) return null;
+  if (!report) {
+    return (
+      <section className="rounded-panel border border-dashed border-line bg-surface p-4">
+        <p className="font-mono text-xs tracking-widest text-signal">3 · DESCARGA</p>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          Todavía no hay paquete. Elige el proyecto y pulsa Preparar mi proyecto. El botón de descarga aparece aquí.
+        </p>
+      </section>
+    );
+  }
   return (
     <section className="rounded-panel border border-signal bg-surface p-4">
-      <p className="font-mono text-xs tracking-widest text-signal">PAQUETE DE ESTA MISIÓN</p>
+      <p className="font-mono text-xs tracking-widest text-signal">3 · DESCARGA</p>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Incluye el scaffolding, EMPEZAR.md y la carpeta proyectos. Si elegiste una app móvil, su archivo va en proyectos/…/movil/. El teléfono no ejecuta el proyecto: ese archivo es lo que se pega o se adjunta.
+        Incluye el código, las pruebas y EMPEZAR.md. Si elegiste una app móvil, su archivo va en proyectos/…/movil/. El teléfono no ejecuta el proyecto: ese archivo es lo que se pega o se adjunta.
       </p>
       <button
         type="button"
@@ -544,7 +595,7 @@ function MissionDownload({
         className="mt-4 inline-flex h-11 items-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink disabled:opacity-60"
       >
         <Download className="size-4" aria-hidden="true" />
-        {packaging ? "Empaquetando…" : "Descargar paquete de esta misión"}
+        {packaging ? "Empaquetando…" : "Descargar mi proyecto"}
       </button>
       {note && <p className="mt-3 break-all font-mono text-xs text-muted">{note}</p>}
     </section>
@@ -555,9 +606,9 @@ function ReportSummary({ report }: { report: ExecutionReport | null }) {
   if (!report) {
     return (
       <section className="rounded-panel border border-line bg-surface p-4">
-        <p className="text-xs font-medium tracking-wide text-muted">SIN EJECUCIÓN</p>
+        <p className="text-xs font-medium tracking-wide text-muted">SIN PREPARAR</p>
         <p className="mt-2 text-sm leading-relaxed text-muted">
-          Elige un perfil y lanza un objetivo. El grafo, la evidencia y el diff del sandbox salen de esa ejecución, no de pasos ficticios.
+          El detalle sale después de preparar el proyecto. No es un paso aparte: es la misma preparación.
         </p>
         <ol className="mt-4 flex flex-wrap gap-2">
           {PHASE_ORDER.map((phase) => (
