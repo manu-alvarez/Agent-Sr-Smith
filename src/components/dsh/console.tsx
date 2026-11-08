@@ -103,7 +103,17 @@ export function Console() {
   const rules = useMemo(() => explainPolicy(), []);
   const slug = projectSlug(projectName);
   const ready = projectName.trim().length > 0 && objective.trim().length > 0;
-  const step: 1 | 2 | 3 = report ? 3 : ready ? 2 : 1;
+  const step: 1 | 2 | 3 = report ? 3 : 1;
+
+  function goToStep(next: 1 | 2 | 3) {
+    if (next === 2) {
+      execute();
+      document.getElementById("descarga")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    document.getElementById(next === 1 ? "elige" : "descarga")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (next === 1) document.getElementById("project-name")?.focus();
+  }
 
   function execute(nextObjective = objective, nextProfile = profileId) {
     if (!nextObjective.trim() || !projectName.trim()) {
@@ -180,19 +190,23 @@ export function Console() {
           <ol className="grid grid-cols-3 gap-2" aria-label="Camino">
             {(
               [
-                [1, "Elige"],
-                [2, "Prepara"],
-                [3, "Descarga"],
+                [1, "Elige", "El formulario"],
+                [2, "Prepara", "Crea el paquete"],
+                [3, "Descarga", "El ZIP"],
               ] as const
-            ).map(([number, label]) => (
-              <li
-                key={number}
-                className={
-                  "rounded-panel border px-3 py-2 text-sm " +
-                  (step === number ? "border-signal bg-signal text-ink" : "border-line bg-surface text-muted")
-                }
-              >
-                <span className="font-mono text-xs">{number}</span> {label}
+            ).map(([number, label, hint]) => (
+              <li key={number}>
+                <button
+                  type="button"
+                  onClick={() => goToStep(number)}
+                  className={
+                    "h-auto w-full rounded-panel border px-3 py-2 text-left text-sm " +
+                    (step === number ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg")
+                  }
+                >
+                  <span className="font-mono text-xs">{number}</span> {label}
+                  <span className={"mt-1 block text-xs " + (step === number ? "text-ink/80" : "text-muted")}>{hint}</span>
+                </button>
               </li>
             ))}
           </ol>
@@ -225,10 +239,10 @@ export function Console() {
         {details && view === "scaffold" && <Scaffold />}
         {(!details || view === "mission") && (
           <section className="grid min-w-0 gap-4 lg:grid-cols-5">
-            <div className="flex min-w-0 flex-col gap-4 lg:col-span-2">
+            <div id="elige" className="flex min-w-0 scroll-mt-28 flex-col gap-4 lg:col-span-2">
               <div className="rounded-panel border border-line bg-surface p-4">
                 <label htmlFor="project-name" className="text-xs font-medium tracking-wide text-muted">
-                  1 · NOMBRE
+                  NOMBRE
                 </label>
                 <input
                   id="project-name"
@@ -237,7 +251,7 @@ export function Console() {
                   className="mt-3 h-11 w-full rounded-panel border border-line bg-bg px-3 text-sm text-fg outline-none focus:border-signal"
                 />
                 <p className="mt-2 font-mono text-xs text-muted">proyectos/{slug}</p>
-                <p className="mt-3 text-xs font-medium tracking-wide text-muted">2 · QUÉ VAS A CONSTRUIR</p>
+                <p className="mt-3 text-xs font-medium tracking-wide text-muted">QUÉ VAS A CONSTRUIR</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
                   Es el primer código de tu carpeta, no el plano de control. Elige una sola forma.
                 </p>
@@ -266,7 +280,7 @@ export function Console() {
                     );
                   })}
                 </div>
-                <p className="mt-4 text-xs font-medium tracking-wide text-muted">3 · ENTORNO</p>
+                <p className="mt-4 text-xs font-medium tracking-wide text-muted">ENTORNO</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted">OpenCode viene elegido. Puedes añadir Claude Code, Codex, Cursor o VS Code.</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {IDES.map((item) => {
@@ -299,7 +313,7 @@ export function Console() {
                     <li key={item.id}>{item.summary}</li>
                   ))}
                 </ul>
-                <p className="mt-4 text-xs font-medium tracking-wide text-muted">4 · MÓVIL</p>
+                <p className="mt-4 text-xs font-medium tracking-wide text-muted">MÓVIL</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
                   Estas apps no abren la carpeta ni ejecutan npm. Cada botón genera el archivo que esa app sí puede pegar o adjuntar.
                 </p>
@@ -335,7 +349,7 @@ export function Console() {
                 </ul>
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
-                <p className="text-xs font-medium tracking-wide text-muted">5 · PERFIL</p>
+                <p className="text-xs font-medium tracking-wide text-muted">PERFIL</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {PROFILES.map((item) => (
                     <button
@@ -355,7 +369,7 @@ export function Console() {
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
                 <label htmlFor="objective" className="text-xs font-medium tracking-wide text-muted">
-                  6 · OBJETIVO
+                  OBJETIVO
                 </label>
                 <textarea
                   id="objective"
@@ -398,7 +412,7 @@ export function Console() {
                 {error && <p className="mt-3 text-sm text-danger">{error}</p>}
               </div>
             </div>
-            <div className="flex min-w-0 flex-col gap-4 lg:col-span-3">
+            <div id="descarga" className="flex min-w-0 scroll-mt-28 flex-col gap-4 lg:col-span-3">
               <MissionDownload report={report} packaging={packaging} note={packageNote} onDownload={async () => {
                   if (!report || !profile) return;
                   setPackaging(true);
