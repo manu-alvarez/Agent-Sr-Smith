@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, Download, FileJson, GitBranch, Play, ScrollText, Shield, Users } from "lucide-react";
 import { buildMissionPackage } from "../../lib/mission-package";
 import { MatrixRain } from "./matrix-rain";
+import { AgentBuilder } from "./agent-builder";
 import { FRAMEWORKS, IDES, MOBILE_APPS, projectSlug, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
 import { publicUrl } from "../../lib/public-url";
 import {
@@ -93,6 +94,7 @@ export function Console() {
   const [mobile, setMobile] = useState<MobileId[]>([]);
   const [view, setView] = useState<View>("mission");
   const [details, setDetails] = useState(false);
+  const [agentOpen, setAgentOpen] = useState(false);
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
   const [objective, setObjective] = useState(PRESETS[0]?.objective ?? "");
   const [report, setReport] = useState<ExecutionReport | null>(null);
@@ -160,11 +162,28 @@ export function Console() {
         <div className="mx-auto flex min-w-0 max-w-6xl flex-col gap-4 px-4 py-4 sm:px-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="font-mono text-xs tracking-widest text-signal">SR.SMITH</p>
-            <div className="flex min-w-0 flex-col items-start gap-2 sm:items-end">
+            <div className="flex min-w-0 flex-col items-stretch gap-2 sm:items-end">
+              <div className="flex flex-wrap justify-end gap-2">
+              <button
+                type="button"
+                aria-pressed={agentOpen}
+                onClick={() => {
+                  setAgentOpen((open) => !open);
+                  setDetails(false);
+                  setView("mission");
+                }}
+                className={
+                  "inline-flex h-11 items-center rounded-full border px-4 text-sm " +
+                  (agentOpen ? "border-signal bg-signal text-ink" : "border-line bg-surface text-fg")
+                }
+              >
+                {agentOpen ? "Volver al proyecto" : "Crear agente"}
+              </button>
               <button
                 type="button"
                 aria-pressed={details}
                 onClick={() => {
+                  setAgentOpen(false);
                   setDetails((open) => !open);
                   setView("mission");
                 }}
@@ -175,9 +194,11 @@ export function Console() {
               >
                 {details ? "Volver a tu proyecto" : "Ver cómo decide"}
               </button>
+              </div>
               <button
                 type="button"
                 onClick={() => {
+                  setAgentOpen(false);
                   setDetails(true);
                   setView("scaffold");
                 }}
@@ -187,6 +208,7 @@ export function Console() {
               </button>
             </div>
           </div>
+          {!agentOpen && (
           <ol className="grid grid-cols-3 gap-2" aria-label="Camino">
             {(
               [
@@ -210,6 +232,7 @@ export function Console() {
               </li>
             ))}
           </ol>
+          )}
           {details && (
           <nav className="flex max-w-full gap-2 overflow-x-auto pb-1" aria-label="Cómo decide">
             {NAV.map((item) => {
@@ -236,6 +259,10 @@ export function Console() {
       </header>
 
       <div className="mx-auto min-w-0 max-w-6xl px-4 py-6 sm:px-6">
+        {agentOpen ? (
+          <AgentBuilder />
+        ) : (
+          <>
         {details && view === "scaffold" && <Scaffold />}
         {(!details || view === "mission") && (
           <section className="grid min-w-0 gap-4 lg:grid-cols-5">
@@ -459,6 +486,8 @@ export function Console() {
         {details && view === "policy" && <Policy rules={rules} />}
         {details && view === "contracts" && <Contracts />}
         {details && view === "architecture" && <Architecture />}
+          </>
+        )}
       </div>
       </div>
     </main>
