@@ -42,3 +42,23 @@ function runStarter(framework: "cli" | "api" | "library") {
 test("el CLI elegido se prueba solo", () => runStarter("cli"));
 test("la API elegida se prueba sola", () => runStarter("api"));
 test("la biblioteca elegida se prueba sola", () => runStarter("library"));
+test("cada app móvil recibe su propio archivo", () => {
+  const { files } = starterFiles({
+    name: "Checkpoint local",
+    objective: "Guardar un checkpoint con suma de verificación.",
+    framework: "cli",
+    ide: ["opencode"],
+    mobile: ["pocketpal", "locally", "enchanted", "lobehub", "edge"],
+  });
+  const pal = JSON.parse(files["movil/pocketpal.pal.json"] ?? "") as { type: string; systemPrompt: string };
+  assert.equal(pal.type, "assistant");
+  assert.match(pal.systemPrompt, /checkpoint/);
+  assert.match(pal.systemPrompt, /package.json/);
+  const lobe = JSON.parse(files["movil/lobehub.agent.json"] ?? "") as { config: { systemRole: string }; identifier: string };
+  assert.equal(lobe.identifier, "checkpoint-local");
+  assert.match(lobe.config.systemRole, /suma de verificación/);
+  assert.match(files["movil/locally.md"] ?? "", /Locally AI/);
+  assert.match(files["movil/enchanted.md"] ?? "", /Enchanted/);
+  assert.match(files["movil/edge-gallery.md"] ?? "", /LLM Chat/);
+  assert.equal(files["movil/no-existe.md"], undefined);
+});

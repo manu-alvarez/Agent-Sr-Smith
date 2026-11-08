@@ -50,14 +50,49 @@ export const IDES = [
   },
 ] as const;
 
+export const MOBILE_APPS = [
+  {
+    id: "pocketpal",
+    label: "PocketPal",
+    file: "movil/pocketpal.pal.json",
+    summary: "Un Pal asistente. PocketPal no abre carpetas: pega systemPrompt en Pals, o adjunta el JSON si tu versión lo permite.",
+  },
+  {
+    id: "locally",
+    label: "Locally",
+    file: "movil/locally.md",
+    summary: "Locally AI no compila. Adjunta este markdown al chat o úsalo como instrucción del sistema.",
+  },
+  {
+    id: "enchanted",
+    label: "Enchanted",
+    file: "movil/enchanted.md",
+    summary: "Enchanted guarda un system prompt por conversación. Pega este archivo ahí, o adjúntalo si el chat acepta documentos.",
+  },
+  {
+    id: "lobehub",
+    label: "LobeHub",
+    file: "movil/lobehub.agent.json",
+    summary: "Agente en el formato del índice de LobeHub. Importa el JSON o pega config.systemRole.",
+  },
+  {
+    id: "edge",
+    label: "Edge Gallery",
+    file: "movil/edge-gallery.md",
+    summary: "Edge Gallery importa modelos .task, no proyectos. Este archivo es el prompt para pegar en LLM Chat.",
+  },
+] as const;
+
 export type FrameworkId = (typeof FRAMEWORKS)[number]["id"];
 export type IdeId = (typeof IDES)[number]["id"];
+export type MobileId = (typeof MOBILE_APPS)[number]["id"];
 
 export interface StarterInput {
   name: string;
   objective: string;
   framework: FrameworkId;
   ide: IdeId[];
+  mobile?: MobileId[];
 }
 
 export function projectSlug(name: string): string {
@@ -348,6 +383,78 @@ ${guide}
   return files;
 }
 
+function projectBrief(slug: string, objective: string, framework: FrameworkId, sources: Record<string, string>): string {
+  const listing = Object.keys(sources)
+    .sort()
+    .map((path) => `- ${path}`)
+    .join("\n");
+  const bodies = Object.entries(sources)
+    .filter(([path]) => path.startsWith("src/") || path === "package.json")
+    .map(([path, content]) => `### ${path}\n\n\`\`\`\n${content.trim()}\n\`\`\``)
+    .join("\n\n");
+  return `Proyecto: ${slug}
+Objetivo: ${objective}
+Forma: ${framework}
+
+No inventes servicios, claves ni dependencias. El código de abajo es el que hay que cambiar. En el ordenador, dentro de esta carpeta: npm install, npm test, npm start. En el móvil no se ejecutan esos comandos: propones el diff y el usuario lo aplica.
+
+Archivos:
+${listing}
+
+${bodies}
+`;
+}
+
+function mobileFiles(input: StarterInput, slug: string, sources: Record<string, string>): Record<string, string> {
+  const chosen = MOBILE_APPS.filter((item) => input.mobile?.includes(item.id));
+  if (chosen.length === 0) return {};
+  const objective = input.objective.trim();
+  const brief = projectBrief(slug, objective, input.framework, sources);
+  const files: Record<string, string> = {};
+  for (const app of chosen) {
+    if (app.id === "pocketpal") {
+      const systemPrompt = `Eres el asistente de desarrollo de ${slug}.\n\n${brief}`;
+      files[app.file] = json({
+        type: "assistant",
+        name: slug,
+        description: objective.slice(0, 180),
+        systemPrompt,
+        originalSystemPrompt: systemPrompt,
+        isSystemPromptChanged: false,
+        useAIPrompt: false,
+        parameters: {},
+        parameterSchema: [],
+        source: "local",
+        capabilities: {},
+      });
+    } else if (app.id === "lobehub") {
+      files[app.file] = json({
+        author: "Sr.Smith",
+        identifier: slug,
+        locale: "es-ES",
+        config: {
+          systemRole: `Eres el agente de ${slug}. Trabajas el código que viene en este rol.\n\n${brief}`,
+        },
+        meta: {
+          avatar: "🟢",
+          title: slug,
+          description: objective.slice(0, 180),
+          tags: ["sr-smith", input.framework],
+        },
+      });
+    } else {
+      const where =
+        app.id === "locally"
+          ? "Locally AI: adjunta este archivo al chat o pégalo como instrucción del sistema."
+          : app.id === "enchanted"
+            ? "Enchanted: pega este archivo en el system prompt de la conversación."
+            : "Edge Gallery: abre LLM Chat y pega este archivo como primer mensaje. La app no importa proyectos.";
+      files[app.file] = `# ${slug} para ${app.label}\n\n${where}\n\n${brief}`;
+    }
+  }
+  return files;
+}
+
 export function starterFiles(input: StarterInput): { slug: string; files: Record<string, string> } {
   const slug = projectSlug(input.name);
   const objective = input.objective.trim();
@@ -355,6 +462,7 @@ export function starterFiles(input: StarterInput): { slug: string; files: Record
     input.framework === "api" ? apiSources(slug, objective) : input.framework === "library" ? librarySources(slug, objective) : cliSources(slug, objective);
   const framework = FRAMEWORKS.find((item) => item.id === input.framework) ?? FRAMEWORKS[0];
   const chosen = IDES.filter((item) => input.ide.includes(item.id));
+  const phones = MOBILE_APPS.filter((item) => input.mobile?.includes(item.id));
   const ideLabel = chosen.map((item) => item.label).join(", ") || "OpenCode";
   const ideFilesHint = [
     input.ide.includes("opencode") ? "`opencode.json`, `.opencode/` y `AGENTS.md`" : "",
@@ -385,7 +493,11 @@ npm test
 npm start
 \`\`\`
 
-${input.framework === "api" ? "La API escucha en http://127.0.0.1:8788. \`PORT\` cambia el puerto.\n" : ""}## CLI del plano de control
+${input.framework === "api" ? "La API escucha en http://127.0.0.1:8788. \`PORT\` cambia el puerto.\n" : ""}${
+    phones.length
+      ? `## Móvil\n\n${phones.map((item) => `- ${item.label}: \`${item.file}\`. ${item.summary}`).join("\n")}\n\n`
+      : ""
+  }## CLI del plano de control
 
 Desde la raíz \`sr-smith/\`, no desde aquí:
 
@@ -402,6 +514,10 @@ node --experimental-strip-types src/cli/index.ts doctor
     "README.md": readme,
     ...sources,
     ...ideFiles({ ...input, objective }, slug),
+    ...mobileFiles({ ...input, objective }, slug, {
+      "package.json": packageJson(slug, input.framework),
+      ...sources,
+    }),
   };
   return { slug, files };
 }

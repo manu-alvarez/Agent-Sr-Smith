@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Boxes, Download, FileJson, GitBranch, Play, ScrollText, Shield, Users } from "lucide-react";
 import { buildMissionPackage } from "../../lib/mission-package";
 import { MatrixRain } from "./matrix-rain";
-import { FRAMEWORKS, IDES, projectSlug, type FrameworkId, type IdeId } from "../../lib/project-starter";
+import { FRAMEWORKS, IDES, MOBILE_APPS, projectSlug, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
 import { publicUrl } from "../../lib/public-url";
 import {
   CONTRACTS,
@@ -90,6 +90,7 @@ export function Console() {
   const [projectName, setProjectName] = useState("mi-proyecto");
   const [framework, setFramework] = useState<FrameworkId>("cli");
   const [ides, setIdes] = useState<IdeId[]>(["opencode"]);
+  const [mobile, setMobile] = useState<MobileId[]>([]);
   const [view, setView] = useState<View>("mission");
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
   const [objective, setObjective] = useState(PRESETS[0]?.objective ?? "");
@@ -260,9 +261,43 @@ export function Console() {
                     <li key={item.id}>{item.summary}</li>
                   ))}
                 </ul>
+                <p className="mt-4 text-xs font-medium tracking-wide text-muted">4 · MÓVIL</p>
+                <p className="mt-2 text-sm leading-relaxed text-muted">
+                  Estas apps no abren la carpeta ni ejecutan npm. Cada botón genera el archivo que esa app sí puede pegar o adjuntar.
+                </p>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {MOBILE_APPS.map((item) => {
+                    const active = mobile.includes(item.id);
+                    return (
+                      <button
+                        key={item.id}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() =>
+                          setMobile((current) =>
+                            current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id],
+                          )
+                        }
+                        className={
+                          "h-11 rounded-full border px-3 text-sm " +
+                          (active ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
+                        }
+                      >
+                        {item.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <ul className="mt-3 flex flex-col gap-1 text-sm leading-relaxed text-muted">
+                  {MOBILE_APPS.filter((item) => mobile.includes(item.id)).map((item) => (
+                    <li key={item.id}>
+                      {item.file}. {item.summary}
+                    </li>
+                  ))}
+                </ul>
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
-                <p className="text-xs font-medium tracking-wide text-muted">4 · PERFIL</p>
+                <p className="text-xs font-medium tracking-wide text-muted">5 · PERFIL</p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {PROFILES.map((item) => (
                     <button
@@ -282,7 +317,7 @@ export function Console() {
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
                 <label htmlFor="objective" className="text-xs font-medium tracking-wide text-muted">
-                  5 · OBJETIVO
+                  6 · OBJETIVO
                 </label>
                 <textarea
                   id="objective"
@@ -327,7 +362,7 @@ export function Console() {
             </div>
             <div className="flex min-w-0 flex-col gap-4 lg:col-span-3">
               <ReportSummary report={report} />
-              <StartGuide slug={slug} framework={framework} ide={ides} />
+              <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} />
               <MissionDownload report={report} packaging={packaging} note={packageNote} onDownload={async () => {
                   if (!report || !profile) return;
                   setPackaging(true);
@@ -342,6 +377,7 @@ export function Console() {
                       projectName,
                       framework,
                       ide: ides,
+                      mobile,
                     });
                     const url = URL.createObjectURL(packed.blob);
                     const link = document.createElement("a");
@@ -439,11 +475,22 @@ function Scaffold() {
   );
 }
 
-function StartGuide({ slug, framework, ide }: { slug: string; framework: FrameworkId; ide: IdeId[] }) {
+function StartGuide({
+  slug,
+  framework,
+  ide,
+  mobile,
+}: {
+  slug: string;
+  framework: FrameworkId;
+  ide: IdeId[];
+  mobile: MobileId[];
+}) {
   const frameworkLabel = FRAMEWORKS.find((item) => item.id === framework)?.label ?? framework;
   const ideLabel = IDES.filter((item) => ide.includes(item.id))
     .map((item) => item.label)
     .join(", ");
+  const phones = MOBILE_APPS.filter((item) => mobile.includes(item.id));
   return (
     <section className="rounded-panel border border-line bg-surface p-4">
       <p className="font-mono text-xs tracking-widest text-signal">ASÍ SE EMPIEZA</p>
@@ -455,6 +502,14 @@ function StartGuide({ slug, framework, ide }: { slug: string; framework: Framewo
           <span className="text-muted">Framework · {frameworkLabel}.</span>{" "}
           <span className="font-mono">npm install && npm test && npm start</span>
         </li>
+        {phones.map((item) => (
+          <li key={item.id}>
+            <span className="text-muted">{item.label}.</span> {item.summary}{" "}
+            <span className="font-mono">
+              proyectos/{slug}/{item.file}
+            </span>
+          </li>
+        ))}
         <li>
           <span className="text-muted">CLI.</span> En la raíz <span className="font-mono">sr-smith/</span>:{" "}
           <span className="font-mono">npm test</span> y <span className="font-mono">src/cli/index.ts doctor</span>
@@ -480,7 +535,7 @@ function MissionDownload({
     <section className="rounded-panel border border-signal bg-surface p-4">
       <p className="font-mono text-xs tracking-widest text-signal">PAQUETE DE ESTA MISIÓN</p>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Incluye el scaffolding, EMPEZAR.md y la carpeta proyectos: código, prueba, npm start y la configuración del IDE elegido. El CLI de Sr.Smith queda en la raíz del ZIP.
+        Incluye el scaffolding, EMPEZAR.md y la carpeta proyectos. Si elegiste una app móvil, su archivo va en proyectos/…/movil/. El teléfono no ejecuta el proyecto: ese archivo es lo que se pega o se adjunta.
       </p>
       <button
         type="button"

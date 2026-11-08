@@ -1,7 +1,7 @@
 import { strToU8, unzipSync, zipSync } from "fflate";
 import { scanUntrusted } from "../../dsh-superagent-xlevel/src/governance/safety/index.ts";
 import type { ExecutionReport, ProfileId } from "../../dsh-superagent-xlevel/src/public.ts";
-import { FRAMEWORKS, IDES, starterFiles, type FrameworkId, type IdeId } from "./project-starter.ts";
+import { FRAMEWORKS, IDES, MOBILE_APPS, starterFiles, type FrameworkId, type IdeId, type MobileId } from "./project-starter.ts";
 
 import { publicUrl } from "./public-url.ts";
 
@@ -23,6 +23,7 @@ export interface MissionInput {
   projectName: string;
   framework: FrameworkId;
   ide: IdeId[];
+  mobile?: MobileId[];
 }
 
 export function composeMissionZip(
@@ -47,11 +48,13 @@ export function missionFiles(input: MissionInput): Record<string, string> {
     objective: safe,
     framework: input.framework,
     ide: input.ide,
+    mobile: input.mobile,
   });
   const framework = FRAMEWORKS.find((item) => item.id === input.framework)?.label ?? input.framework;
   const ide = IDES.filter((item) => input.ide.includes(item.id))
     .map((item) => item.label)
     .join(", ");
+  const phones = MOBILE_APPS.filter((item) => input.mobile?.includes(item.id));
   const projectRoot = `sr-smith/proyectos/${starter.slug}`;
   const tasks = input.report.tasks
     .map(
@@ -92,13 +95,18 @@ node --experimental-strip-types src/cli/index.ts doctor
 \`\`\`
 
 La misión de esta ejecución está en \`misiones/${id}/\`.
-`,
+${
+  phones.length
+    ? `\n## 4. Móvil\n\nEl teléfono no ejecuta npm. Cada app tiene su archivo en \`proyectos/${starter.slug}/movil/\`.\n\n${phones.map((item) => `- ${item.label}: \`${item.file}\`. ${item.summary}`).join("\n")}\n`
+    : ""
+}`,
     [`${base}/OBJETIVO.md`]: `# Misión ${id}\n\nProyecto: ${starter.slug}\nFramework: ${framework}\nIDE: ${ide}\nPerfil: ${input.profileName} (${input.profileId})\nModo: ${input.report.mode}\nEstado: ${input.report.status}\n\n## Objetivo\n\n${safe}\n\n## Roles del perfil\n\n${input.roles.map((role) => `- ${role}`).join("\n")}\n\nEl código para desarrollar está en \`proyectos/${starter.slug}\`. Esta carpeta guarda el objetivo, el plan y el informe.\n`,
     [`${base}/perfil.json`]: JSON.stringify(
       {
         project: starter.slug,
         framework: input.framework,
         ide: input.ide,
+        mobile: input.mobile ?? [],
         profileId: input.profileId,
         profileName: input.profileName,
         mode: input.report.mode,
