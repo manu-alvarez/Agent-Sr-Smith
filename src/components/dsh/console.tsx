@@ -3,6 +3,8 @@ import { Boxes, Download, FileJson, GitBranch, Play, ScrollText, Shield, Users }
 import { buildMissionPackage } from "../../lib/mission-package";
 import { MatrixRain } from "./matrix-rain";
 import { AgentBuilder } from "./agent-builder";
+import { OllamaBar, storedOllamaHost } from "./ollama-bar";
+import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
 import { FRAMEWORKS, IDES, MOBILE_APPS, projectSlug, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
 import { publicUrl } from "../../lib/public-url";
 import {
@@ -95,6 +97,10 @@ export function Console() {
   const [view, setView] = useState<View>("mission");
   const [details, setDetails] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
+  const [ollamaHost, setOllamaHost] = useState(storedOllamaHost);
+  const [ollamaModel, setOllamaModel] = useState("");
+  const [expertNote, setExpertNote] = useState<string | null>(null);
+  const [modelNote, setModelNote] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
   const [objective, setObjective] = useState(PRESETS[0]?.objective ?? "");
   const [report, setReport] = useState<ExecutionReport | null>(null);
@@ -125,8 +131,27 @@ export function Console() {
     try {
       setReport(runObjective({ objective: nextObjective, profileId: nextProfile, mode: "strict-local" }));
       setPackageNote(null);
+      setExpertNote(null);
       setError(null);
       setView("mission");
+      if (!ollamaModel) {
+        setModelNote(null);
+        return;
+      }
+      setModelNote(`Preguntando a ${ollamaModel}…`);
+      ollamaChat(
+        ollamaHost,
+        ollamaModel,
+        OLLAMA_SYSTEM,
+        `Proyecto: ${projectName}\nObjetivo:\n${nextObjective}\n\nRedacta el documento de trabajo: alcance, archivos, contratos, pruebas y riesgos.`,
+      )
+        .then((text) => {
+          setExpertNote(text);
+          setModelNote(`${ollamaModel} ha redactado DESDE-OLLAMA.md. Saldrá en el ZIP.`);
+        })
+        .catch((caught: unknown) => {
+          setModelNote(caught instanceof Error ? caught.message : "El modelo no respondió.");
+        });
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo ejecutar.");
     }
@@ -259,8 +284,11 @@ export function Console() {
       </header>
 
       <div className="mx-auto min-w-0 max-w-6xl px-4 py-6 sm:px-6">
+        <OllamaBar host={ollamaHost} model={ollamaModel} onHost={setOllamaHost} onModel={setOllamaModel} />
+        {modelNote && <p className="mt-3 text-sm text-muted">{modelNote}</p>}
+        <div className="mt-4">
         {agentOpen ? (
-          <AgentBuilder />
+          <AgentBuilder host={ollamaHost} model={ollamaModel} />
         ) : (
           <>
         {details && view === "scaffold" && <Scaffold />}
@@ -455,6 +483,7 @@ export function Console() {
                       framework,
                       ide: ides,
                       mobile,
+                      expertNote: expertNote ?? undefined,
                     });
                     const url = URL.createObjectURL(packed.blob);
                     const link = document.createElement("a");
@@ -488,6 +517,7 @@ export function Console() {
         {details && view === "architecture" && <Architecture />}
           </>
         )}
+        </div>
       </div>
       </div>
     </main>

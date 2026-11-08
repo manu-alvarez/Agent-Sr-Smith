@@ -24,6 +24,7 @@ export interface MissionInput {
   framework: FrameworkId;
   ide: IdeId[];
   mobile?: MobileId[];
+  expertNote?: string;
 }
 
 export function composeMissionZip(
@@ -120,6 +121,9 @@ ${
   };
   for (const [path, content] of Object.entries(starter.files)) {
     files[`${projectRoot}/${path}`] = content;
+  }
+  if (input.expertNote?.trim()) {
+    files[`${projectRoot}/DESDE-OLLAMA.md`] = `# Redactado por el modelo\n\n${scanUntrusted(input.expertNote).sanitized}\n`;
   }
   for (const change of input.report.changes) {
     if (!change.path.startsWith("sandbox/") || change.path.includes("..")) continue;
