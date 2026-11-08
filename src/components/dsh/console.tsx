@@ -5,7 +5,7 @@ import { MatrixRain } from "./matrix-rain";
 import { AgentBuilder } from "./agent-builder";
 import { OllamaBar, storedOllamaHost } from "./ollama-bar";
 import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
-import { FRAMEWORKS, IDES, MOBILE_APPS, projectSlug, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
+import { FRAMEWORKS, IDES, MOBILE_APPS, projectSlug, starterFiles, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
 import { publicUrl } from "../../lib/public-url";
 import {
   CONTRACTS,
@@ -94,6 +94,7 @@ export function Console() {
   const [framework, setFramework] = useState<FrameworkId>("cli");
   const [ides, setIdes] = useState<IdeId[]>(["opencode"]);
   const [mobile, setMobile] = useState<MobileId[]>([]);
+  const [surface, setSurface] = useState<"computer" | "mobile">("computer");
   const [view, setView] = useState<View>("mission");
   const [details, setDetails] = useState(false);
   const [agentOpen, setAgentOpen] = useState(false);
@@ -110,7 +111,7 @@ export function Console() {
   const profile = PROFILES.find((item) => item.id === profileId) ?? PROFILES[0];
   const rules = useMemo(() => explainPolicy(), []);
   const slug = projectSlug(projectName);
-  const ready = projectName.trim().length > 0 && objective.trim().length > 0;
+  const ready = projectName.trim().length > 0 && objective.trim().length > 0 && (surface === "computer" || mobile.length > 0);
   const step: 1 | 2 | 3 = report ? 3 : 1;
 
   function goToStep(next: 1 | 2 | 3) {
@@ -306,6 +307,29 @@ export function Console() {
                   className="mt-3 h-11 w-full rounded-panel border border-line bg-bg px-3 text-sm text-fg outline-none focus:border-signal"
                 />
                 <p className="mt-2 font-mono text-xs text-muted">proyectos/{slug}</p>
+                <p className="mt-3 text-xs font-medium tracking-wide text-muted">DÓNDE LO VAS A USAR</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  {([
+                    ["computer", "Ordenador", "IDE, código y pruebas"],
+                    ["mobile", "Móvil", "Un archivo por app"],
+                  ] as const).map(([id, label, hint]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      aria-pressed={surface === id}
+                      onClick={() => setSurface(id)}
+                      className={
+                        "rounded-panel border px-3 py-3 text-left text-sm " +
+                        (surface === id ? "border-signal bg-signal text-ink" : "border-line bg-bg text-fg")
+                      }
+                    >
+                      <span className="block font-medium">{label}</span>
+                      <span className={"mt-1 block text-xs " + (surface === id ? "text-ink/80" : "text-muted")}>{hint}</span>
+                    </button>
+                  ))}
+                </div>
+                {surface === "computer" ? (
+                  <>
                 <p className="mt-3 text-xs font-medium tracking-wide text-muted">QUÉ VAS A CONSTRUIR</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
                   Es el primer código de tu carpeta, no el plano de control. Elige una sola forma.
@@ -368,9 +392,12 @@ export function Console() {
                     <li key={item.id}>{item.summary}</li>
                   ))}
                 </ul>
-                <p className="mt-4 text-xs font-medium tracking-wide text-muted">MÓVIL</p>
+                  </>
+                ) : (
+                  <>
+                <p className="mt-4 text-xs font-medium tracking-wide text-muted">APP</p>
                 <p className="mt-2 text-sm leading-relaxed text-muted">
-                  Estas apps no abren la carpeta ni ejecutan npm. Cada botón genera el archivo que esa app sí puede pegar o adjuntar.
+                  El teléfono no abre la carpeta ni ejecuta npm. Cada botón de descarga es el archivo de esa app.
                 </p>
                 <div className="mt-3 flex flex-wrap gap-2">
                   {MOBILE_APPS.map((item) => {
@@ -397,11 +424,11 @@ export function Console() {
                 </div>
                 <ul className="mt-3 flex flex-col gap-1 text-sm leading-relaxed text-muted">
                   {MOBILE_APPS.filter((item) => mobile.includes(item.id)).map((item) => (
-                    <li key={item.id}>
-                      {item.file}. {item.summary}
-                    </li>
+                    <li key={item.id}>{item.summary}</li>
                   ))}
                 </ul>
+                  </>
+                )}
               </div>
               <div className="rounded-panel border border-line bg-surface p-4">
                 <p className="text-xs font-medium tracking-wide text-muted">PERFIL</p>
@@ -468,7 +495,17 @@ export function Console() {
               </div>
             </div>
             <div id="descarga" className="flex min-w-0 scroll-mt-28 flex-col gap-4 lg:col-span-3">
-              <MissionDownload report={report} packaging={packaging} note={packageNote} onDownload={async () => {
+              <MissionDownload
+                report={report}
+                packaging={packaging}
+                note={packageNote}
+                surface={surface}
+                files={
+                  surface === "mobile" && report
+                    ? starterFiles({ name: projectName, objective, framework, ide: [], mobile, surface: "mobile" }).files
+                    : undefined
+                }
+                onDownload={async () => {
                   if (!report || !profile) return;
                   setPackaging(true);
                   setPackageNote(null);
@@ -481,9 +518,10 @@ export function Console() {
                       report,
                       projectName,
                       framework,
-                      ide: ides,
-                      mobile,
+                      ide: surface === "computer" ? ides : [],
+                      mobile: surface === "mobile" ? mobile : [],
                       expertNote: expertNote ?? undefined,
+                      surface,
                     });
                     const url = URL.createObjectURL(packed.blob);
                     const link = document.createElement("a");
@@ -499,7 +537,7 @@ export function Console() {
                   }
                 }}
               />
-              <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} />
+              <StartGuide slug={slug} framework={framework} ide={ides} mobile={mobile} surface={surface} />
               {details && (
                 <>
                   <ReportSummary report={report} />
@@ -595,11 +633,13 @@ function StartGuide({
   framework,
   ide,
   mobile,
+  surface,
 }: {
   slug: string;
   framework: FrameworkId;
   ide: IdeId[];
   mobile: MobileId[];
+  surface: "computer" | "mobile";
 }) {
   const frameworkLabel = FRAMEWORKS.find((item) => item.id === framework)?.label ?? framework;
   const ideLabel = IDES.filter((item) => ide.includes(item.id))
@@ -610,6 +650,14 @@ function StartGuide({
     <section className="rounded-panel border border-line bg-surface p-4">
       <p className="font-mono text-xs tracking-widest text-signal">ASÍ SE EMPIEZA</p>
       <ol className="mt-3 flex flex-col gap-3 text-sm leading-relaxed">
+        {surface === "mobile" ? (
+          phones.map((item) => (
+            <li key={item.id}>
+              <span className="text-muted">{item.label}.</span> Descarga su archivo y ábrelo en la app. No hay npm.
+            </li>
+          ))
+        ) : (
+          <>
         <li>
           <span className="text-muted">Entorno · {ideLabel}.</span> Abre <span className="font-mono">proyectos/{slug}</span>.
         </li>
@@ -617,14 +665,8 @@ function StartGuide({
           <span className="text-muted">Framework · {frameworkLabel}.</span>{" "}
           <span className="font-mono">npm install && npm test && npm start</span>
         </li>
-        {phones.map((item) => (
-          <li key={item.id}>
-            <span className="text-muted">{item.label}.</span> {item.summary}{" "}
-            <span className="font-mono">
-              proyectos/{slug}/{item.file}
-            </span>
-          </li>
-        ))}
+          </>
+        )}
         <li>
           <span className="text-muted">CLI.</span> En la raíz <span className="font-mono">sr-smith/</span>:{" "}
           <span className="font-mono">npm test</span> y <span className="font-mono">src/cli/index.ts doctor</span>
@@ -638,11 +680,15 @@ function MissionDownload({
   report,
   packaging,
   note,
+  surface,
+  files,
   onDownload,
 }: {
   report: ExecutionReport | null;
   packaging: boolean;
   note: string | null;
+  surface: "computer" | "mobile";
+  files?: Record<string, string>;
   onDownload: () => void;
 }) {
   if (!report) {
@@ -659,8 +705,33 @@ function MissionDownload({
     <section className="rounded-panel border border-signal bg-surface p-4">
       <p className="font-mono text-xs tracking-widest text-signal">3 · DESCARGA</p>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Incluye el código, las pruebas y EMPEZAR.md. Si elegiste una app móvil, su archivo va en proyectos/…/movil/. El teléfono no ejecuta el proyecto: ese archivo es lo que se pega o se adjunta.
+        {surface === "mobile"
+          ? "Cada botón descargará el archivo de la app, no un ZIP de ordenador."
+          : "El ZIP trae el código, las pruebas, AGENTS.md, las skills y las comprobaciones."}
       </p>
+      {surface === "mobile" ? (
+        <div className="mt-4 flex flex-col gap-2">
+          {Object.entries(files ?? {}).map(([path, content]) => (
+            <button
+              key={path}
+              type="button"
+              onClick={() => {
+                const blob = new Blob([content], { type: path.endsWith(".json") ? "application/json" : "text/markdown" });
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = path;
+                link.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="inline-flex h-11 items-center justify-between rounded-panel border border-signal bg-bg px-4 text-sm text-fg"
+            >
+              <span>{path}</span>
+              <Download className="size-4 text-signal" aria-hidden="true" />
+            </button>
+          ))}
+        </div>
+      ) : (
       <button
         type="button"
         onClick={onDownload}
@@ -668,8 +739,9 @@ function MissionDownload({
         className="mt-4 inline-flex h-11 items-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink disabled:opacity-60"
       >
         <Download className="size-4" aria-hidden="true" />
-        {packaging ? "Empaquetando…" : "Descargar mi proyecto"}
+        {packaging ? "Empaquetando…" : "Descargar scaffolding"}
       </button>
+      )}
       {note && <p className="mt-3 break-all font-mono text-xs text-muted">{note}</p>}
     </section>
   );

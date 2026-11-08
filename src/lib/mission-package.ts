@@ -25,6 +25,7 @@ export interface MissionInput {
   ide: IdeId[];
   mobile?: MobileId[];
   expertNote?: string;
+  surface?: "computer" | "mobile";
 }
 
 export function composeMissionZip(
@@ -50,6 +51,7 @@ export function missionFiles(input: MissionInput): Record<string, string> {
     framework: input.framework,
     ide: input.ide,
     mobile: input.mobile,
+    surface: input.surface,
   });
   const framework = FRAMEWORKS.find((item) => item.id === input.framework)?.label ?? input.framework;
   const ide = IDES.filter((item) => input.ide.includes(item.id))

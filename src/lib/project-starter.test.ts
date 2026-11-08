@@ -61,4 +61,23 @@ test("cada app móvil recibe su propio archivo", () => {
   assert.match(files["movil/enchanted.md"] ?? "", /Enchanted/);
   assert.match(files["movil/edge-gallery.md"] ?? "", /LLM Chat/);
   assert.equal(files["movil/no-existe.md"], undefined);
+  assert.ok(files["GEMINI.md"]);
+  assert.ok(files["mcp.json"]);
+  assert.ok(files["evals/aceptacion.json"]);
+  assert.ok(files[".agents/skills/proyecto/SKILL.md"]);
+  assert.ok(files[".grok/skills/proyecto/SKILL.md"]);
+});
+
+test("en móvil no viaja el proyecto de ordenador", () => {
+  const { files } = starterFiles({
+    name: "Checkpoint local",
+    objective: "Guardar un checkpoint.",
+    framework: "cli",
+    ide: ["opencode"],
+    mobile: ["pocketpal"],
+    surface: "mobile",
+  });
+  assert.equal(files["package.json"], undefined);
+  assert.match(files["pocketpal.pal.json"] ?? "", /gemma4:latest/);
+  assert.match(files["LEEME.md"] ?? "", /no ejecuta npm/);
 });

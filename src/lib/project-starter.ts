@@ -93,6 +93,8 @@ export interface StarterInput {
   framework: FrameworkId;
   ide: IdeId[];
   mobile?: MobileId[];
+  /** computer mezcla IDE y código. mobile solo entrega el archivo de cada app. */
+  surface?: "computer" | "mobile";
 }
 
 export function projectSlug(name: string): string {
@@ -422,10 +424,14 @@ function mobileFiles(input: StarterInput, slug: string, sources: Record<string, 
         originalSystemPrompt: systemPrompt,
         isSystemPromptChanged: false,
         useAIPrompt: false,
-        parameters: {},
         parameterSchema: [],
         source: "local",
-        capabilities: {},
+        capabilities: { tools: true },
+        parameters: {
+          provider: "ollama",
+          baseUrl: "http://100.100.2.10:11434",
+          model: "gemma4:latest",
+        },
       });
     } else if (app.id === "lobehub") {
       files[app.file] = json({
@@ -456,6 +462,7 @@ function mobileFiles(input: StarterInput, slug: string, sources: Record<string, 
 }
 
 export function starterFiles(input: StarterInput): { slug: string; files: Record<string, string> } {
+  if (input.surface === "mobile") return mobileSurface(input);
   const slug = projectSlug(input.name);
   const objective = input.objective.trim();
   const sources =
@@ -519,5 +526,44 @@ node --experimental-strip-types src/cli/index.ts doctor
       ...sources,
     }),
   };
+  const skill = files[".opencode/skills/proyecto/SKILL.md"] ?? files["AGENTS.md"] ?? files["CLAUDE.md"];
+  if (skill) {
+    files[".agents/skills/proyecto/SKILL.md"] = skill;
+    files[".grok/skills/proyecto/SKILL.md"] = skill;
+    if (input.ide.includes("claude")) files[".claude/skills/proyecto/SKILL.md"] = skill;
+    if (input.ide.includes("cursor")) files[".cursor/skills/proyecto/SKILL.md"] = skill;
+  }
+  const standing = files["AGENTS.md"] ?? files["CLAUDE.md"];
+  if (standing) files["GEMINI.md"] = standing;
+  files["mcp.json"] = json({
+    mcpServers: {},
+    note: "Aquí se declara un servidor MCP cuando el proyecto tenga uno. Este archivo no lleva secretos.",
+  });
+  files["evals/aceptacion.json"] = json({
+    cases: [
+      { id: "objetivo", check: "El resultado nombra el objetivo", expect: objective.slice(0, 160) },
+      { id: "pruebas", check: "npm test termina en cero", expect: "exit 0" },
+      { id: "arranque", check: "npm start hace lo que dice el README", expect: framework.result },
+    ],
+  });
+  if (input.framework === "api") {
+    files["DESIGN.md"] = `# ${slug}\n\nUna página de texto en la raíz y \`/health\`. Sin marca nueva ni assets.\n`;
+    files["llms.txt"] = `# ${slug}\n\n> ${objective}\n\n- [README](README.md)\n`;
+  }
+  return { slug, files };
+}
+
+function mobileSurface(input: StarterInput): { slug: string; files: Record<string, string> } {
+  const slug = projectSlug(input.name);
+  const objective = input.objective.trim();
+  const nested = mobileFiles({ ...input, objective, framework: input.framework }, slug, {
+    "README.md": `# ${slug}\n\n${objective}\n`,
+  });
+  const files: Record<string, string> = {
+    "LEEME.md": `# ${slug} en el móvil\n\nCada archivo es para una app. El teléfono no ejecuta npm ni abre esta carpeta.\nEl modelo remoto, si la app lo permite, es gemma4:latest en http://100.100.2.10:11434.\n`,
+  };
+  for (const [path, content] of Object.entries(nested)) {
+    files[path.replace(/^movil\//, "")] = content;
+  }
   return { slug, files };
 }

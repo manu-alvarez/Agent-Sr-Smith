@@ -86,9 +86,9 @@ function uniqueKnown(values: string[], allowed: string[]): string[] {
 
 export function clampSelection(input: AgentSelection): AgentSelection {
   const limits = {
-    maxSteps: clamp(input.limits.maxSteps, 1, AGENT_LIMITS.maxSteps),
-    maxParallel: clamp(input.limits.maxParallel, 1, AGENT_LIMITS.maxParallel),
-    timeoutMs: clamp(input.limits.timeoutMs, 1_000, AGENT_LIMITS.timeoutMs),
+    maxSteps: clamp(input.limits.maxSteps, 1, 100_000),
+    maxParallel: clamp(input.limits.maxParallel, 1, 64),
+    timeoutMs: clamp(input.limits.timeoutMs, 1_000, 3_600_000),
   };
   return {
     roles: uniqueKnown(input.roles, ROLES.map((item) => item.role)),
@@ -164,7 +164,8 @@ ${toolLines || "- Ninguna."}
 ${providerLines || "- Ninguno."}
 
 Presupuesto: ${chosen.limits.maxSteps} pasos, ${chosen.limits.maxParallel} en paralelo, ${chosen.limits.timeoutMs} ms.
-Devuelves summary, evidence y status (completed, failed o blocked). Sin evidencia no hay completed. Fuera de esta ficha: navegador, CRM, correo y hojas de cálculo. No están en el motor.`;
+Modelo por defecto: ollama/gemma4:latest. Embeddings: nomic-embed-text.
+Devuelves summary, evidence y status (completed, failed o blocked). Sin evidencia no hay completed. Cada capacidad tiene que existir como archivo en skills/, tools/ o agents/.`;
 }
 
 export function agentCode(selection: AgentSelection): string {
@@ -212,6 +213,77 @@ export function agentCode(selection: AgentSelection): string {
     tools: NATIVE_TOOLS.filter((item) => chosen.tools.includes(item.name)).map((item) => item.name),
     roles,
     system: agentSystem(chosen),
+    model: "ollama/gemma4:latest",
+    embeddings: "nomic-embed-text",
   };
   return JSON.stringify(document, null, 2);
+}
+
+const OWN_AGENT = new Set(["orchestrator", "planner", "supervisor", "recovery-agent", "developer", "researcher"]);
+
+export function agentFiles(selection: AgentSelection, draft?: string): Record<string, string> {
+  const chosen = clampSelection(selection);
+  const system = agentSystem(chosen);
+  const files: Record<string, string> = {
+    "AGENTE.md": system,
+    "agent.json": agentCode(chosen) + "\n",
+    "policy.json": JSON.stringify(
+      {
+        id: DEFAULT_POLICY.id,
+        rules: DEFAULT_POLICY.rules
+          .filter((rule) => !rule.modes || rule.modes.includes(chosen.mode))
+          .map((rule) => ({ operation: rule.operation, effect: rule.effect === "require-approval" ? "ask" : rule.effect, reason: rule.reason })),
+      },
+      null,
+      2,
+    ) + "\n",
+    "knowledge.json": JSON.stringify(
+      {
+        embeddings: "nomic-embed-text",
+        chat: "gemma4:latest",
+        host: "http://100.100.2.10:11434",
+        search: chosen.tools.includes("knowledge.search"),
+        memory: chosen.tools.includes("memory.recall") || chosen.tools.includes("memory.remember"),
+      },
+      null,
+      2,
+    ) + "\n",
+    "mcp.json": JSON.stringify({ mcpServers: {}, note: "Conecta aquí las herramientas cuando haya un servidor. Sin secretos." }, null, 2) + "\n",
+    "evals/aceptacion.json": JSON.stringify(
+      {
+        cases: [
+          { id: "evidencia", check: "completed solo con evidencia" },
+          { id: "politica", check: "una operación sin regla no se ejecuta" },
+          { id: "presupuesto", check: `se detiene al llegar a ${chosen.limits.maxSteps} pasos` },
+        ],
+      },
+      null,
+      2,
+    ) + "\n",
+    "commands/verificar.md": "---\ndescription: Comprueba el objetivo contra evals/aceptacion.json\n---\n\nEjecuta las tres comprobaciones y di cuál falla.\n",
+    "commands/recuperar.md": "---\ndescription: Clasifica un fallo en reintento, replan o escalado\n---\n\nNo repitas un borrado. Di el presupuesto que queda.\n",
+  };
+  for (const role of ROLES.filter((item) => chosen.roles.includes(item.role))) {
+    if (OWN_AGENT.has(role.role)) {
+      files[`agents/${role.role}.md`] = `---\ndescription: ${JSON.stringify(role.mission)}\nmode: ${role.role === "orchestrator" ? "primary" : "subagent"}\nmodel: ollama/gemma4:latest\n---\n\n${role.name}. ${role.mission}\n`;
+    } else {
+      files[`skills/${role.role}/SKILL.md`] = `---\nname: ${role.role}\ndescription: ${JSON.stringify(role.mission)}\n---\n\n${role.name}. ${role.mission}\nHerramientas: ${role.tools.filter((tool) => chosen.tools.includes(tool)).join(", ") || "ninguna"}.\n`;
+    }
+  }
+  for (const strategy of STRATEGIES.filter((item) => chosen.strategies.includes(item.id))) {
+    files[`skills/${strategy.id}/SKILL.md`] = `---\nname: ${strategy.id}\ndescription: ${strategy.name}. ${strategy.instruction.slice(0, 180)}\n---\n\n${strategy.instruction}\n`;
+  }
+  for (const skill of SKILLS.filter((item) => chosen.skills.includes(item.id))) {
+    files[`skills/${skill.id}/SKILL.md`] = `---\nname: ${skill.id}\ndescription: ${skill.instruction.slice(0, 180)}\n---\n\n${skill.instruction}\n`;
+  }
+  for (const tool of NATIVE_TOOLS.filter((item) => chosen.tools.includes(item.name))) {
+    files[`tools/${tool.name}.json`] = JSON.stringify({ name: tool.name, description: tool.description }, null, 2) + "\n";
+  }
+  if (draft?.trim()) files["DESDE-OLLAMA.md"] = `# Redactado por el modelo\n\n${draft.trim()}\n`;
+  const index = Object.keys(files)
+    .sort()
+    .map((path) => `- \`${path}\``)
+    .join("\n");
+  files["INDEX.md"] = `# Índice\n\nAGENTE.md es la instrucción corta. agent.json es la ficha. agents/ son roles con modelo propio. skills/ se cargan solo si la tarea coincide. El modelo por defecto es ollama/gemma4:latest.\n\n${index}\n`;
+  return files;
 }

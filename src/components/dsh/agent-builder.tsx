@@ -1,21 +1,22 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { Check, Copy } from "lucide-react";
+import { Copy } from "lucide-react";
 import { CAPABILITIES, NATIVE_TOOLS, PHASE_ORDER, ROLES } from "../../../dsh-superagent-xlevel/src/public.ts";
-import { AGENT_LIMITS, agentCode, agentSystem, fullSelection, SKILLS, STRATEGIES, type AgentMode, type AgentSelection } from "../../lib/agent-export";
+import { strToU8, zipSync } from "fflate";
+import { agentFiles, agentSystem, fullSelection, SKILLS, STRATEGIES, type AgentMode, type AgentSelection } from "../../lib/agent-export";
 import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
 
 export function AgentBuilder({ host, model }: { host: string; model: string }) {
   const [kind, setKind] = useState<"full" | "custom">("full");
   const [custom, setCustom] = useState<AgentSelection>(fullSelection);
-  const [copied, setCopied] = useState<"code" | "system" | "draft" | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
   const [draft, setDraft] = useState<string | null>(null);
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
   const selection = kind === "full" ? fullSelection() : custom;
-  const code = useMemo(() => agentCode(selection), [selection]);
+  const files = useMemo(() => agentFiles(selection, draft ?? undefined), [selection, draft]);
   const system = useMemo(() => agentSystem(selection), [selection]);
 
-  async function copy(value: string, which: "code" | "system" | "draft") {
+  async function copy(value: string, which: string) {
     await navigator.clipboard.writeText(value);
     setCopied(which);
   }
@@ -134,21 +135,21 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             <p className="text-xs font-medium tracking-wide text-muted">PRESUPUESTO</p>
             <div className="mt-3 grid gap-3">
               <Limit
-                label={`Pasos, máximo ${AGENT_LIMITS.maxSteps}`}
+                label={`Pasos, hasta 100000`}
                 value={selection.limits.maxSteps}
-                max={AGENT_LIMITS.maxSteps}
+                max={100_000}
                 onChange={(maxSteps) => setCustom({ ...custom, limits: { ...custom.limits, maxSteps } })}
               />
               <Limit
-                label={`En paralelo, máximo ${AGENT_LIMITS.maxParallel}`}
+                label="En paralelo, hasta 64"
                 value={selection.limits.maxParallel}
-                max={AGENT_LIMITS.maxParallel}
+                max={64}
                 onChange={(maxParallel) => setCustom({ ...custom, limits: { ...custom.limits, maxParallel } })}
               />
               <Limit
-                label={`Tiempo en ms, máximo ${AGENT_LIMITS.timeoutMs}`}
+                label="Tiempo en ms, hasta 3600000"
                 value={selection.limits.timeoutMs}
-                max={AGENT_LIMITS.timeoutMs}
+                max={3_600_000}
                 onChange={(timeoutMs) => setCustom({ ...custom, limits: { ...custom.limits, timeoutMs } })}
               />
             </div>
@@ -160,16 +161,28 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
         <div className="rounded-panel border border-signal bg-surface p-4">
           <p className="font-mono text-xs tracking-widest text-signal">CÓDIGO DEL AGENTE</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            El JSON es el agente. El campo system es la instrucción si el destino solo acepta texto.
+            Cada archivo se copia solo. El ZIP los lleva juntos. El modelo por defecto es ollama/gemma4:latest.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              onClick={() => copy(code, "code")}
+              onClick={() => {
+                const entries: Record<string, Uint8Array> = {};
+                for (const [path, content] of Object.entries(files)) entries[path] = strToU8(content);
+                const bytes = zipSync(entries);
+                const copy = new Uint8Array(bytes.byteLength);
+                copy.set(bytes);
+                const url = URL.createObjectURL(new Blob([copy], { type: "application/zip" }));
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "sr-smith-agente.zip";
+                link.click();
+                URL.revokeObjectURL(url);
+              }}
               className="inline-flex h-11 items-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink"
             >
-              {copied === "code" ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
-              {copied === "code" ? "Copiado" : "Copiar código"}
+              <Copy className="size-4" aria-hidden="true" />
+              Descargar agente
             </button>
             <button
               type="button"
@@ -186,42 +199,26 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             >
               {drafting ? "Redactando…" : model ? `Redactar con ${model}` : "Carga un modelo"}
             </button>
-            <button
-              type="button"
-              onClick={() => copy(system, "system")}
-              className="inline-flex h-11 items-center gap-2 rounded-panel border border-line bg-bg px-4 text-sm text-fg"
-            >
-              {copied === "system" ? <Check className="size-4" aria-hidden="true" /> : <Copy className="size-4" aria-hidden="true" />}
-              {copied === "system" ? "Copiado" : "Copiar instrucción"}
-            </button>
           </div>
-          <textarea
-            readOnly
-            value={code}
-            rows={18}
-            className="mt-4 w-full resize-y rounded-panel border border-line bg-bg p-3 font-mono text-xs leading-relaxed text-fg outline-none"
-          />
           {draftError && <p className="mt-3 text-sm text-danger">{draftError}</p>}
-          {draft && (
-            <>
-              <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-                <p className="font-mono text-xs tracking-widest text-signal">BORRADOR DE {model}</p>
-                <button
-                  type="button"
-                  onClick={() => copy(draft, "draft")}
-                  className="inline-flex h-11 items-center gap-2 rounded-panel border border-line bg-bg px-4 text-sm text-fg"
-                >
-                  {copied === "draft" ? "Copiado" : "Copiar borrador"}
-                </button>
-              </div>
-              <textarea
-                readOnly
-                value={draft}
-                rows={16}
-                className="mt-3 w-full resize-y rounded-panel border border-line bg-bg p-3 font-mono text-xs leading-relaxed text-fg outline-none"
-              />
-            </>
-          )}
+          <ul className="mt-4 flex max-h-[36rem] flex-col gap-2 overflow-auto">
+            {Object.keys(files)
+              .sort()
+              .map((path) => (
+                <li key={path} className="rounded-panel border border-line bg-bg p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-xs text-fg">{path}</span>
+                    <button
+                      type="button"
+                      onClick={() => copy(files[path] ?? "", path)}
+                      className="inline-flex h-9 items-center gap-1 rounded-full border border-line px-3 text-xs text-fg"
+                    >
+                      {copied === path ? "Copiado" : "Copiar"}
+                    </button>
+                  </div>
+                </li>
+              ))}
+          </ul>
         </div>
       </div>
     </section>
