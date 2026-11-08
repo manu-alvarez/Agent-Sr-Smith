@@ -1,7 +1,7 @@
 import { useMemo, useState, type ReactNode } from "react";
 import { Check, Copy } from "lucide-react";
 import { CAPABILITIES, NATIVE_TOOLS, PHASE_ORDER, ROLES } from "../../../dsh-superagent-xlevel/src/public.ts";
-import { AGENT_LIMITS, agentCode, agentSystem, fullSelection, type AgentMode, type AgentSelection } from "../../lib/agent-export";
+import { AGENT_LIMITS, agentCode, agentSystem, fullSelection, SKILLS, STRATEGIES, type AgentMode, type AgentSelection } from "../../lib/agent-export";
 
 export function AgentBuilder() {
   const [kind, setKind] = useState<"full" | "custom">("full");
@@ -40,7 +40,7 @@ export function AgentBuilder() {
             >
               <span className="block font-medium">Full</span>
               <span className={"mt-1 block text-xs leading-relaxed " + (kind === "full" ? "text-ink/80" : "text-muted")}>
-                {ROLES.length} roles, {NATIVE_TOOLS.length} herramientas, {CAPABILITIES.length} proveedores.
+                {ROLES.length} roles, {STRATEGIES.length} instrucciones, {SKILLS.length} skill, {NATIVE_TOOLS.length} herramientas.
               </span>
             </button>
             <button
@@ -60,6 +60,26 @@ export function AgentBuilder() {
           </div>
         </div>
         <fieldset disabled={kind === "full"} className="flex flex-col gap-4 disabled:opacity-60">
+          <ChoiceGroup title="Instrucciones">
+            {STRATEGIES.map((item) => (
+              <Toggle
+                key={item.id}
+                label={item.name}
+                pressed={selection.strategies.includes(item.id)}
+                onClick={() => setCustom({ ...custom, strategies: toggle(custom.strategies, item.id) })}
+              />
+            ))}
+          </ChoiceGroup>
+          <ChoiceGroup title="Skills">
+            {SKILLS.map((item) => (
+              <Toggle
+                key={item.id}
+                label={item.name}
+                pressed={selection.skills.includes(item.id)}
+                onClick={() => setCustom({ ...custom, skills: toggle(custom.skills, item.id) })}
+              />
+            ))}
+          </ChoiceGroup>
           <ChoiceGroup title="Roles">
             {ROLES.map((item) => (
               <Toggle

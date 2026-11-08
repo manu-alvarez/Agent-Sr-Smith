@@ -9,6 +9,8 @@ test("Full incluye cada rol, herramienta y proveedor que existe", () => {
     roles: Array<{ id: string }>;
     tools: string[];
     providers: Array<{ provider: string }>;
+    strategies: string[];
+    skills: string[];
     system: string;
   };
   assert.equal(code.id, "sr-smith-full");
@@ -21,8 +23,12 @@ test("Full incluye cada rol, herramienta y proveedor que existe", () => {
     code.providers.map((item) => item.provider),
     CAPABILITIES.map((item) => item.provider),
   );
+  assert.equal(code.strategies.length, 6);
+  assert.deepEqual(code.skills, ["review"]);
   assert.match(code.system, /pol_default_autonomy/);
   assert.match(code.system, /Orchestrator/);
+  assert.match(code.system, /run-review.py/);
+  assert.match(code.system, /navegador, CRM/);
 });
 
 test("Personalizada no puede pasar del techo de Full ni inventar ids", () => {
@@ -30,12 +36,16 @@ test("Personalizada no puede pasar del techo de Full ni inventar ids", () => {
     roles: ["developer", "no-existe"],
     tools: ["workspace.read", "shell.exec"],
     providers: ["ollama", "inventado"],
+    strategies: ["planning", "nope"],
+    skills: ["review", "browser"],
     mode: "local-runtime",
     limits: { maxSteps: 10_000, maxParallel: 0, timeoutMs: 10 },
   });
   assert.deepEqual(clamped.roles, ["developer"]);
   assert.deepEqual(clamped.tools, ["workspace.read"]);
   assert.deepEqual(clamped.providers, ["ollama"]);
+  assert.deepEqual(clamped.strategies, ["planning"]);
+  assert.deepEqual(clamped.skills, ["review"]);
   assert.equal(clamped.mode, "local-runtime");
   assert.equal(clamped.limits.maxSteps, fullSelection().limits.maxSteps);
   assert.equal(clamped.limits.maxParallel, 1);
