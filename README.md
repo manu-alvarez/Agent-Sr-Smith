@@ -2,6 +2,12 @@
 
 Aplicación web para convertir un objetivo de trabajo en un proyecto inicial descargable. Puedes elegir una herramienta de línea de comandos, una API local o una biblioteca, y seleccionar los editores o asistentes para los que quieres generar instrucciones.
 
+## Probar en el navegador
+
+Abre [Sr. Smith en GitHub Pages](https://manu-alvarez.github.io/Agent-Sr-Smith/). Para generar un ZIP, elige **Ordenador**, selecciona el tipo de proyecto y los editores, y escribe el nombre y el objetivo. Pulsa **Preparar** y después **Descargar scaffolding**. Al descomprimir el ZIP encontrarás el proyecto bajo `proyectos/<nombre>` y sus instrucciones de arranque.
+
+La generación del paquete funciona sin un modelo conectado. Si activas la redacción con Ollama en la web publicada, el navegador necesita acceso al servidor de Ollama configurado. El proxy de desarrollo se usa al ejecutar la aplicación con Vite.
+
 ## Ejecutar la interfaz
 
 Desde la raíz, con Node.js y npm instalados:
