@@ -224,14 +224,8 @@ export default defineConfig(({ command, isPreview }) => ({
     tanstackStart(
       pages
         ? {
-            spa: {
-              enabled: true,
-              prerender: {
-                enabled: true,
-                outputPath: ".output/public",
-                crawlLinks: false,
-              },
-            },
+            prerender: { enabled: true, crawlLinks: false },
+            pages: [{ path: "/", prerender: { outputPath: ".output/public.html" } }],
           }
         : undefined,
     ),
