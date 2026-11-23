@@ -72,5 +72,14 @@ test("el paquete del agente separa skills, agentes y el índice", () => {
   assert.ok(files["tools/browser.open.json"]);
   assert.match(files["policy.json"] ?? "", /full-access|network/);
   assert.ok(files["knowledge.json"]);
+  assert.ok(files["src/mcp-server.mjs"]);
+  assert.ok(files[".claude/agents/orchestrator.md"]);
+  assert.match(files["CAPABILITIES.md"] ?? "", /knowledge.ingest\/search\/stats/);
+  assert.match(files["CAPABILITIES.md"] ?? "", /\/orchestrate/);
+  assert.match(files["CAPABILITIES.md"] ?? "", /shell.exec es opcional/);
+  assert.match(files["src/mcp-server.mjs"] ?? "", /ALLOW_SHELL/);
+  assert.match(files["src/mcp-server.mjs"] ?? "", /knowledge.ingest/);
+  assert.match(files["src/orchestrator.mjs"] ?? "", /orchestrateGoal/);
+  assert.match(files["mcp.json"] ?? "", /SMITH_ALLOW_SHELL/);
   assert.match(files["INDEX.md"] ?? "", /AGENTE.md/);
 });
