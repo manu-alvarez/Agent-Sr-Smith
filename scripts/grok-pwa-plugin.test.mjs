@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
-import test from "node:test";
+import { after, before, test } from "node:test";
 import {
   appNameFromHost,
   createHeadInjector,
@@ -20,6 +20,12 @@ import {
 import { renderInstallPage } from "./grok-pwa-plugin.mjs";
 
 const TEMPLATE_ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
+
+// Isolate generic OG tests from this project's concrete src/lib/og/site.json.
+const ORIGINAL_CWD = process.cwd();
+const TEST_FIXTURE_CWD = mkdtempSync(join(tmpdir(), 'grok-head-fixture-'));
+before(() => process.chdir(TEST_FIXTURE_CWD));
+after(() => process.chdir(ORIGINAL_CWD));
 
 test("injects before </head>", () => {
   const out = injectGrokPwaHead("<html><head><title>x</title></head><body></body></html>");
