@@ -13,8 +13,10 @@ Keep /workspace/.grok/og-pending updated while generating. The marker expires af
 Prepare public/og.jpg at 1200x630 and public/x-banner.jpg at 1200x264. Each must remain below 600 KB.
 Stage files under /workspace/.grok/, not public/. Use the commands in references/asset-handover.md.
 Set src/lib/og/site.json with the accurate title and description, card=custom, image=/og.jpg, banner=/x-banner.jpg, and type=x:game for games.
-Run node scripts/brand-check.mjs --game for games.
-For an ordinary utility intentionally using the placeholder, run node scripts/brand-check.mjs --placeholder-ok.
+For games, run:
+node scripts/brand-check.mjs --game
+For an ordinary utility intentionally using the placeholder, run:
+node scripts/brand-check.mjs --placeholder-ok
 Do not report completion unless the image signatures, dimensions and self-check have been verified.
 
 ## Output contract
