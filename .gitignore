@@ -3,7 +3,12 @@ dsh-superagent-xlevel/node_modules/
 .vercel/
 .output/
 dist/
-.grok/
+.grok/*
+!.grok/app-env.json
+!.grok/skills/
+.grok/skills/*
+!.grok/skills/og/
+!.grok/skills/og/**
 .tanstack/
 artifacts/
 attachments/
