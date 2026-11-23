@@ -3,8 +3,9 @@ import { Boxes, Download, FileJson, GitBranch, Play, ScrollText, Shield, Users }
 import { buildMissionPackage } from "../../lib/mission-package";
 import { MatrixRain } from "./matrix-rain";
 import { AgentBuilder } from "./agent-builder";
-import { OllamaBar, storedOllamaHost } from "./ollama-bar";
-import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
+import { OllamaBar } from "./ollama-bar";
+import { PROVIDERS, storedProviderConfig, type AiProviderConfig } from "../../lib/ai-provider";
+import { generateProjectFiles } from "../../lib/ai-scaffold";
 import { FRAMEWORKS, IDE_GROUPS, IDES, MOBILE_APPS, projectSlug, starterFiles, type FrameworkId, type IdeId, type MobileId } from "../../lib/project-starter";
 import { publicUrl } from "../../lib/public-url";
 import {
@@ -121,9 +122,10 @@ export function Console() {
   const [surface, setSurface] = useState<"computer" | "mobile">("computer");
   const [view, setView] = useState<View>("mission");
   const [details, setDetails] = useState(false);
-  const [ollamaHost, setOllamaHost] = useState(storedOllamaHost);
-  const [ollamaModel, setOllamaModel] = useState("");
+  const [aiConfig, setAiConfig] = useState<AiProviderConfig>(storedProviderConfig);
   const [expertNote, setExpertNote] = useState<string | null>(null);
+  const [generatedFiles, setGeneratedFiles] = useState<Record<string, string>>({});
+  const [generationPending, setGenerationPending] = useState(false);
   const [modelNote, setModelNote] = useState<string | null>(null);
   const [profileId, setProfileId] = useState<ProfileId>("engineering");
   const [objective, setObjective] = useState("");
@@ -158,24 +160,43 @@ export function Console() {
       setError(null);
       setView("mission");
       setScene("download");
-      if (!ollamaModel) {
+      setGeneratedFiles({});
+      setGenerationPending(false);
+      if (surface === "mobile") {
+        setModelNote(aiConfig.model ? "La exportación móvil usa su paquete de instrucciones; la generación de código fuente se realiza en ordenador." : null);
+        return;
+      }
+      if (!aiConfig.model) {
         setModelNote(null);
         return;
       }
-      setModelNote(`Preguntando a ${ollamaModel}…`);
-      ollamaChat(
-        ollamaHost,
-        ollamaModel,
-        OLLAMA_SYSTEM,
-        `Proyecto: ${projectName}\nObjetivo:\n${nextObjective}\n\nRedacta el documento de trabajo: alcance, archivos, contratos, pruebas y riesgos.`,
-      )
-        .then((text) => {
-          setExpertNote(text);
-          setModelNote(`${ollamaModel} ha redactado DESDE-OLLAMA.md. Saldrá en el ZIP.`);
+      const providerLabel = PROVIDERS.find((item) => item.id === aiConfig.provider)?.label ?? aiConfig.provider;
+      setModelNote(`Generando archivos reales con ${providerLabel} · ${aiConfig.model}…`);
+      setGenerationPending(true);
+      const base = starterFiles({
+        name: projectName,
+        objective: nextObjective,
+        framework,
+        ide: ides,
+        mobile: [],
+        surface: "computer",
+      });
+      generateProjectFiles(aiConfig, {
+        projectName,
+        objective: nextObjective,
+        framework,
+        ide: ides,
+        baseFiles: base.files,
+      })
+        .then((generated) => {
+          setGeneratedFiles(generated.files);
+          setExpertNote(generated.summary);
+          setModelNote(`${Object.keys(generated.files).length} archivos generados por ${providerLabel}. Se incluirán en el ZIP.`);
         })
         .catch((caught: unknown) => {
-          setModelNote(caught instanceof Error ? caught.message : "El modelo no respondió.");
-        });
+          setModelNote(caught instanceof Error ? caught.message : "No se pudo generar el código. Se conservará el scaffolding base.");
+        })
+        .finally(() => setGenerationPending(false));
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "No se pudo ejecutar.");
     }
@@ -216,7 +237,7 @@ export function Console() {
         )}
         <div key={scene} className="glass-card mt-5 max-h-[78vh] overflow-auto rounded-panel p-6 sm:p-8">
         {scene === "agent" ? (
-          <AgentBuilder host={ollamaHost} model={ollamaModel} />
+          <AgentBuilder config={aiConfig} />
         ) : (
           <>
         {(!details || view === "mission") && (
@@ -406,12 +427,13 @@ export function Console() {
             )}
             {scene === "download" && (
               <div id="descarga">
-                <h1 className="text-3xl font-semibold tracking-tight">Tu proyecto está listo</h1>
+                <h1 className="text-3xl font-semibold tracking-tight">{generationPending ? "Generando tu proyecto…" : "Tu proyecto está listo"}</h1>
                 {modelNote && <p className="mt-2 text-sm text-muted">{modelNote}</p>}
                 <div className="mt-4">
                   <MissionDownload
                     report={report}
                     packaging={packaging}
+                    generationPending={generationPending}
                     note={packageNote}
                     surface={surface}
                     files={
@@ -432,10 +454,14 @@ export function Console() {
                           report,
                           projectName,
                           framework,
-                          ide: surface === "computer" ? ides : [],
-                          mobile: surface === "mobile" ? mobile : [],
+        ide: ides,
+        mobile: [],
                           expertNote: expertNote ?? undefined,
-                          surface,
+                          generatedFiles,
+                          aiProvider: aiConfig.provider,
+                          aiModel: aiConfig.model,
+                          aiBaseUrl: aiConfig.baseUrl,
+        surface: "computer",
                         });
                         const url = URL.createObjectURL(packed.blob);
                         const link = document.createElement("a");
@@ -485,7 +511,7 @@ export function Console() {
           </button>
         </div>
         <div className="mt-4">
-          <OllamaBar host={ollamaHost} model={ollamaModel} onHost={setOllamaHost} onModel={setOllamaModel} />
+          <OllamaBar config={aiConfig} onConfig={setAiConfig} />
         </div>
         {details && scene !== "agent" && (
           <div className="mt-4 max-h-80 overflow-auto rounded-panel border border-line bg-black/50 p-3">
@@ -647,6 +673,7 @@ function StartGuide({
 function MissionDownload({
   report,
   packaging,
+  generationPending,
   note,
   surface,
   files,
@@ -654,6 +681,7 @@ function MissionDownload({
 }: {
   report: ExecutionReport | null;
   packaging: boolean;
+  generationPending: boolean;
   note: string | null;
   surface: "computer" | "mobile";
   files?: Record<string, string>;
@@ -703,11 +731,11 @@ function MissionDownload({
       <button
         type="button"
         onClick={onDownload}
-        disabled={packaging}
+        disabled={packaging || generationPending}
         className="mt-4 inline-flex h-11 items-center gap-2 rounded-panel bg-signal px-4 text-sm font-semibold text-ink disabled:opacity-60"
       >
         <Download className="size-4" aria-hidden="true" />
-        {packaging ? "Empaquetando…" : "Descargar scaffolding"}
+        {generationPending ? "Generando código…" : packaging ? "Empaquetando…" : "Descargar scaffolding"}
       </button>
       )}
       {note && <p className="mt-3 break-all font-mono text-xs text-muted">{note}</p>}
