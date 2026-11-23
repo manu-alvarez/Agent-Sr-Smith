@@ -26,7 +26,7 @@ export function preferModel(models: OllamaModel[]): string {
 }
 
 async function fetchOllama(host: string, path: string, init?: RequestInit): Promise<Response> {
-  if (import.meta.env.DEV && typeof window !== "undefined") {
+  if (typeof window !== "undefined") {
     try {
       const proxied = await fetch(`/ollama-proxy${path}`, init);
       if ((proxied.headers.get("content-type") ?? "").includes("json")) return proxied;

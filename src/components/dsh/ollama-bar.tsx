@@ -1,88 +1,116 @@
-import { useEffect, useRef, useState } from "react";
-import { DEFAULT_OLLAMA_HOST, listOllamaModels, preferModel, type OllamaModel } from "../../lib/ollama";
-
-const HOST_KEY = "sr-smith-ollama-host";
-const MODEL_KEY = "sr-smith-ollama-model";
+import { useEffect, useState } from "react";
+import {
+  discoverProviderModels,
+  AI_PROVIDER_STORAGE_KEY,
+  PROVIDERS,
+  type AiProviderConfig,
+} from "../../lib/ai-provider";
 
 export function OllamaBar({
-  host,
-  model,
-  onHost,
-  onModel,
+  config,
+  onConfig,
 }: {
-  host: string;
-  model: string;
-  onHost: (host: string) => void;
-  onModel: (model: string) => void;
+  config: AiProviderConfig;
+  onConfig: (config: AiProviderConfig) => void;
 }) {
-  const [models, setModels] = useState<OllamaModel[]>([]);
-  const [status, setStatus] = useState("Buscando modelos…");
-  const onModelRef = useRef(onModel);
-  onModelRef.current = onModel;
+  const [models, setModels] = useState<string[]>([]);
+  const [status, setStatus] = useState("Configura el proveedor y consulta sus modelos.");
+  const [loading, setLoading] = useState(false);
+  const selected = PROVIDERS.find((item) => item.id === config.provider) ?? PROVIDERS[0]!;
 
+  const { provider, baseUrl, apiKey, model } = config;
   useEffect(() => {
     const controller = new AbortController();
-    listOllamaModels(host, controller.signal)
+    const snapshot: AiProviderConfig = { provider, baseUrl, apiKey, model };
+    if (provider !== "ollama" && !apiKey.trim()) {
+      setModels([]);
+      setStatus("Introduce la API key para consultar los modelos. La clave solo permanece en esta sesión.");
+      return () => controller.abort();
+    }
+    setLoading(true);
+    discoverProviderModels(snapshot, controller.signal)
       .then((found) => {
         setModels(found);
-        if (found.length === 0) {
-          setStatus("Ollama respondió, pero no hay modelos.");
-          return;
-        }
-        const saved = localStorage.getItem(MODEL_KEY);
-        const next = found.some((item) => item.name === saved) ? saved! : preferModel(found);
-        onModelRef.current(next);
-        localStorage.setItem(MODEL_KEY, next);
-        setStatus(`${found.length} modelos en ${host}`);
+        const nextModel = found.includes(model) ? model : found[0] ?? "";
+        if (nextModel !== model) onConfig({ ...snapshot, model: nextModel });
+        setStatus(found.length ? found.length + " modelos disponibles." : "El proveedor respondió, pero no devolvió modelos.");
       })
-      .catch((caught: unknown) => {
-        if (caught instanceof DOMException && caught.name === "AbortError") return;
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
         setModels([]);
-        setStatus("Sin ruta desde este navegador. Si Ollama está encendido, permite el origen con OLLAMA_ORIGINS=* y reinícialo.");
-      });
+        setStatus(error instanceof Error ? error.message : "No se pudo consultar el proveedor.");
+      })
+      .finally(() => { if (!controller.signal.aborted) setLoading(false); });
     return () => controller.abort();
-  }, [host]);
+  }, [provider, baseUrl, apiKey, model, onConfig]);
+
+  function update(next: AiProviderConfig) {
+    onConfig(next);
+    try {
+      localStorage.setItem(AI_PROVIDER_STORAGE_KEY, JSON.stringify({
+        provider: next.provider,
+        baseUrl: next.baseUrl,
+        model: next.model,
+      }));
+    } catch {
+      // The provider remains usable for this session if storage is unavailable.
+    }
+  }
 
   return (
     <section className="rounded-panel border border-line bg-surface p-4">
-      <p className="font-mono text-xs tracking-widest text-signal">OLLAMA</p>
+      <p className="font-mono text-xs tracking-widest text-signal">MODELO DE IA</p>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        El modelo se carga en tu navegador y redacta el proyecto y el agente. Esta web no entra en tu red por su cuenta.
+        El proveedor seleccionado redacta los artefactos del proyecto. Las claves API no se guardan ni se incluyen en el ZIP.
       </p>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-        <input
-          aria-label="Dirección de Ollama"
-          value={host}
-          onChange={(event) => {
-            onHost(event.target.value);
-            localStorage.setItem(HOST_KEY, event.target.value);
-          }}
-          className="h-11 min-w-0 flex-1 rounded-panel border border-line bg-bg px-3 font-mono text-sm text-fg outline-none focus:border-signal"
-        />
+      <div className="mt-3 grid gap-2 sm:grid-cols-2">
         <select
-          aria-label="Modelo"
-          value={model}
+          aria-label="Proveedor de IA"
+          value={config.provider}
           onChange={(event) => {
-            onModel(event.target.value);
-            localStorage.setItem(MODEL_KEY, event.target.value);
+            const provider = event.target.value as AiProviderConfig["provider"];
+            const preset = PROVIDERS.find((item) => item.id === provider)!;
+            update({ provider, baseUrl: preset.baseUrl, apiKey: "", model: "" });
+            setModels([]);
           }}
-          disabled={models.length === 0}
-          className="h-11 rounded-panel border border-line bg-bg px-3 text-sm text-fg outline-none focus:border-signal disabled:opacity-60"
+          className="h-11 min-w-0 rounded-panel border border-line bg-bg px-3 text-sm text-fg outline-none focus:border-signal"
         >
-          {models.length === 0 ? <option value="">Sin modelos</option> : null}
-          {models.map((item) => (
-            <option key={item.name} value={item.name}>
-              {item.name}
-            </option>
-          ))}
+          {PROVIDERS.map((item) => <option key={item.id} value={item.id}>{item.label}</option>)}
         </select>
+        <input
+          aria-label="Modelo de IA"
+          list="sr-smith-models"
+          value={config.model}
+          onChange={(event) => update({ ...config, model: event.target.value })}
+          placeholder={loading ? "Consultando modelos…" : "Selecciona o escribe un modelo"}
+          className="h-11 min-w-0 rounded-panel border border-line bg-bg px-3 text-sm text-fg outline-none focus:border-signal"
+        />
+        <datalist id="sr-smith-models">
+          {models.map((model) => <option key={model} value={model} />)}
+        </datalist>
+        <input
+          aria-label="URL base del proveedor"
+          value={config.baseUrl}
+          onChange={(event) => update({ ...config, baseUrl: event.target.value })}
+          placeholder="URL base del proveedor"
+          className="h-11 min-w-0 rounded-panel border border-line bg-bg px-3 font-mono text-xs text-fg outline-none focus:border-signal sm:col-span-2"
+        />
+        {selected.keyRequired && (
+          <input
+            aria-label="API key"
+            type="password"
+            autoComplete="off"
+            value={config.apiKey}
+            onChange={(event) => onConfig({ ...config, apiKey: event.target.value })}
+            placeholder="API key (solo memoria de esta sesión)"
+            className="h-11 min-w-0 rounded-panel border border-line bg-bg px-3 font-mono text-xs text-fg outline-none focus:border-signal sm:col-span-2"
+          />
+        )}
       </div>
       <p className="mt-2 text-sm text-muted">{status}</p>
+      <p className="mt-1 text-xs text-muted">
+        OpenAI, OpenRouter y NVIDIA usan API compatible. Claude y Gemini usan sus APIs nativas. Las APIs externas pueden generar cargos según el proveedor. Sr. Smith no añade créditos. Las claves permanecen en memoria de esta sesión y el proxy no las persiste. Los endpoints personalizados pueden requerir CORS. En despliegues sin proxy, permite el origen exacto de Sr. Smith en OLLAMA_ORIGINS y reinicia Ollama; evita * salvo pruebas.
+      </p>
     </section>
   );
-}
-
-export function storedOllamaHost(): string {
-  if (typeof localStorage === "undefined") return DEFAULT_OLLAMA_HOST;
-  return localStorage.getItem(HOST_KEY) || DEFAULT_OLLAMA_HOST;
 }

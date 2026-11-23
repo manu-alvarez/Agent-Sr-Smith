@@ -533,7 +533,7 @@ npm test
 npm start
 \`\`\`
 
-${input.framework === "api" ? "La API escucha en http://127.0.0.1:8788. \`PORT\` cambia el puerto.\n" : ""}${
+${input.framework === "api" ? "La API escucha en http://127.0.0.1:8788. `PORT` cambia el puerto.\n" : ""}${
     phones.length
       ? `## Móvil\n\n${phones.map((item) => `- ${item.label}: \`${item.file}\`. ${item.summary}`).join("\n")}\n\n`
       : ""
@@ -593,7 +593,7 @@ function mobileSurface(input: StarterInput): { slug: string; files: Record<strin
     "README.md": `# ${slug}\n\n${objective}\n`,
   });
   const files: Record<string, string> = {
-    "LEEME.md": `# ${slug} en el móvil\n\nCada archivo es para una app. El teléfono no ejecuta npm ni abre esta carpeta.\nEl modelo remoto, si la app lo permite, es gemma4:latest en http://100.100.2.10:11434.\n`,
+    "LEEME.md": `# ${slug} en el móvil\n\nCada archivo es para una app. El teléfono no ejecuta npm ni abre esta carpeta.\nEl modelo remoto, si la app lo permite, se configura en la dirección de tu servidor Ollama (por defecto http://localhost:11434).\n`,
   };
   for (const [path, content] of Object.entries(nested)) {
     files[path.replace(/^movil\//, "")] = content;

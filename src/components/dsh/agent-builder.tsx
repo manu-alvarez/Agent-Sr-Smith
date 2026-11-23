@@ -2,10 +2,11 @@ import { useMemo, useState, type ReactNode } from "react";
 import { Copy } from "lucide-react";
 import { CAPABILITIES, PHASE_ORDER, ROLES } from "../../../dsh-superagent-xlevel/src/public.ts";
 import { strToU8, zipSync } from "fflate";
-import { agentFiles, agentSystem, CAPACITIES, fullSelection, SKILLS, STRATEGIES, TOOLS, type AgentMode, type AgentSelection } from "../../lib/agent-export";
-import { OLLAMA_SYSTEM, ollamaChat } from "../../lib/ollama";
+import { agentFiles, agentSystem, CAPACITIES, fullSelection, SKILLS, STRATEGIES, TOOLS, type AgentSelection } from "../../lib/agent-export";
+import { OLLAMA_SYSTEM } from "../../lib/ollama";
+import { providerChat, type AiProviderConfig } from "../../lib/ai-provider";
 
-export function AgentBuilder({ host, model }: { host: string; model: string }) {
+export function AgentBuilder({ config }: { config: AiProviderConfig }) {
   const [kind, setKind] = useState<"full" | "custom">("full");
   const [custom, setCustom] = useState<AgentSelection>(fullSelection);
   const [copied, setCopied] = useState<string | null>(null);
@@ -13,8 +14,8 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
   const [drafting, setDrafting] = useState(false);
   const [draftError, setDraftError] = useState<string | null>(null);
   const selection = kind === "full" ? fullSelection() : custom;
-  const files = useMemo(() => agentFiles(selection, draft ?? undefined), [selection, draft]);
-  const system = useMemo(() => agentSystem(selection), [selection]);
+  const files = useMemo(() => agentFiles(selection, draft ?? undefined, config), [selection, draft, config]);
+  const system = useMemo(() => agentSystem(selection, config), [selection, config]);
 
   async function copy(value: string, which: string) {
     await navigator.clipboard.writeText(value);
@@ -31,7 +32,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
         <div className="rounded-panel border border-line bg-surface p-4">
           <p className="font-mono text-xs tracking-widest text-signal">CREAR AGENTE SR. SMITH</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Full usa todo lo que el motor tiene ahora. Personalizada elige entre esas mismas piezas. El código se pega en cualquier sitio.
+            Full incluye el catálogo completo. Personalizada selecciona roles y recursos. Las herramientas no conectadas quedan declaradas, no ejecutables.
           </p>
           <div className="mt-3 grid grid-cols-2 gap-2">
             <button
@@ -45,7 +46,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             >
               <span className="block font-medium">Full</span>
               <span className={"mt-1 block text-xs leading-relaxed " + (kind === "full" ? "text-ink/80" : "text-muted")}>
-                {ROLES.length} roles, {STRATEGIES.length} habilidades, {CAPACITIES.length} capacidades, {SKILLS.length} skills, {TOOLS.length} herramientas. Acceso total.
+                {ROLES.length} roles, {STRATEGIES.length} habilidades, {CAPACITIES.length} capacidades, {SKILLS.length} skills y {TOOLS.length} herramientas catalogadas. Solo los adaptadores MCP implementados se ejecutan.
               </span>
             </button>
             <button
@@ -144,7 +145,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
               ))}
             </div>
             <p className="mt-3 text-sm leading-relaxed text-muted">
-              Acceso total usa ficheros, terminal, git, red, navegador y APIs sin preguntar en cada paso. No guarda claves ni borra fuera del proyecto. Los otros dos modos sí preguntan o cortan la red.
+              El modo define la política del agente. MCP local implementa workspace, búsqueda léxica y memoria persistente. shell.exec es opcional, requiere SMITH_ALLOW_SHELL=true y una lista de programas permitidos. Git avanzado, navegador y RAG vectorial siguen sin adaptador.
             </p>
           </div>
           <div className="rounded-panel border border-line bg-surface p-4">
@@ -177,7 +178,7 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
         <div className="rounded-panel border border-signal bg-surface p-4">
           <p className="font-mono text-xs tracking-widest text-signal">CÓDIGO DEL AGENTE</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Cada archivo se copia solo. El ZIP los lleva juntos. El modelo por defecto es ollama/gemma4:latest.
+            Cada archivo se puede copiar por separado. El ZIP incluye el runtime conversacional y la configuración del proveedor seleccionado. Las capacidades sin adaptador se identifican como declarativas.
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
@@ -202,18 +203,18 @@ export function AgentBuilder({ host, model }: { host: string; model: string }) {
             </button>
             <button
               type="button"
-              disabled={!model || drafting}
+              disabled={!config.model || (config.provider !== "ollama" && !config.apiKey) || drafting}
               onClick={() => {
                 setDrafting(true);
                 setDraftError(null);
-                ollamaChat(host, model, OLLAMA_SYSTEM, `Amplía esta ficha a una instrucción de sistema completa, con archivos y criterios de aceptación.\n\n${system}`)
+                providerChat(config, OLLAMA_SYSTEM, `Amplía esta ficha a una instrucción de sistema completa, con archivos y criterios de aceptación.\n\n${system}`)
                   .then((text) => setDraft(text))
                   .catch((caught: unknown) => setDraftError(caught instanceof Error ? caught.message : "El modelo no respondió."))
                   .finally(() => setDrafting(false));
               }}
               className="inline-flex h-11 items-center gap-2 rounded-panel border border-signal px-4 text-sm text-signal disabled:opacity-60"
             >
-              {drafting ? "Redactando…" : model ? `Redactar con ${model}` : "Carga un modelo"}
+              {drafting ? "Redactando…" : config.model ? `Redactar con ${config.model}` : "Carga un modelo"}
             </button>
           </div>
           {draftError && <p className="mt-3 text-sm text-danger">{draftError}</p>}

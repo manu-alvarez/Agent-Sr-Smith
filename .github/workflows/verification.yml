@@ -2,7 +2,7 @@ name: Agent Smith verification
 
 on:
   push:
-    branches: [fix/test-suite-20261123]
+    branches: [main]
   pull_request:
     branches: [main]
 
