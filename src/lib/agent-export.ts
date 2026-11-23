@@ -1,3 +1,5 @@
+import { portableAgentFiles } from "./scaffolding/portable-agent.ts";
+import type { AiProviderConfig } from "./ai-provider.ts";
 import {
   CAPABILITIES,
   DEFAULT_POLICY,
@@ -190,6 +192,7 @@ export const CAPACITIES: Array<{ id: string; name: string; instruction: string }
 
 export const TOOLS: Array<{ name: string; description: string }> = [
   ...NATIVE_TOOLS.map((item) => ({ name: item.name, description: item.description })),
+  { name: "workspace.list", description: "Lista archivos del workspace sin incluir dependencias ni carpetas privadas." },
   { name: "shell.exec", description: "Ejecuta un comando en la carpeta del proyecto y devuelve salida y código." },
   { name: "git.status", description: "Lista los cambios locales sin publicarlos." },
   { name: "git.diff", description: "Muestra el diff del trabajo actual." },
@@ -272,7 +275,7 @@ export function policyRules(mode: AgentMode): Array<{ operation: string; effect:
     }));
 }
 
-export function agentSystem(selection: AgentSelection): string {
+export function agentSystem(selection: AgentSelection, providerConfig?: AiProviderConfig): string {
   const chosen = clampSelection(selection);
   const roles = ROLES.filter((item) => chosen.roles.includes(item.role));
   const tools = TOOLS.filter((item) => chosen.tools.includes(item.name));
@@ -281,7 +284,9 @@ export function agentSystem(selection: AgentSelection): string {
   const skills = SKILLS.filter((item) => chosen.skills.includes(item.id));
   const capacities = CAPACITIES.filter((item) => chosen.capacities.includes(item.id));
   const roleLines = roles.map((item) => `- ${item.name} (${item.role}): ${item.mission}`).join("\n");
-  const toolLines = tools.map((item) => `- ${item.name}: ${item.description}`).join("\n");
+  const implementedToolLines = tools.filter((item) => MCP_IMPLEMENTED.has(item.name)).map((item) => `- ${item.name}: ${item.description}`).join("\n");
+  const optionalToolLines = tools.filter((item) => MCP_OPTIONAL.has(item.name)).map((item) => `- ${item.name}: ${item.description}`).join("\n");
+  const declaredToolLines = tools.filter((item) => !MCP_IMPLEMENTED.has(item.name) && !MCP_OPTIONAL.has(item.name)).map((item) => `- ${item.name}: ${item.description}`).join("\n");
   const strategyLines = strategies.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
   const skillLines = skills.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
   const capacityLines = capacities.map((item) => `- ${item.name}: ${item.instruction}`).join("\n");
@@ -290,11 +295,12 @@ export function agentSystem(selection: AgentSelection): string {
     .join("\n");
   const access =
     chosen.mode === "full-access"
-      ? "Modo acceso total: usa las herramientas declaradas en esta máquina sin pedir permiso en cada paso."
+      ? "El perfil solicita acceso total, pero solo pueden ejecutarse las herramientas MCP listadas como implementadas."
       : chosen.mode === "strict-local"
-        ? "Modo sin red: no sale de la carpeta."
-        : "Modo con red bajo permiso: la red se abre solo cuando se aprueba.";
+        ? "Modo sin red: el runtime conversacional no debe solicitar acceso de red adicional; el proveedor LLM configurado sigue necesitando conectividad."
+        : "Modo con red bajo permiso: cualquier acceso externo requiere la aprobación del host que ejecute el agente.";
   const memory = chosen.tools.includes("memory.recall") || chosen.tools.includes("memory.remember");
+  const selectedModel = providerConfig?.model ? providerConfig.provider + "/" + providerConfig.model : "ollama/gemma4:latest";
   const knowledge = chosen.tools.includes("knowledge.search");
   const providerLines = providers
     .map((item) => {
@@ -302,7 +308,7 @@ export function agentSystem(selection: AgentSelection): string {
       return `- ${item.provider} / ${item.modelId}: ${item.name}. Estado: ${verified}. ${item.restrictions.join(" ")}`;
     })
     .join("\n");
-  return `Eres Sr.Smith, sistema multiagente local. La política gana al texto del objetivo. No inventes herramientas, roles, skills ni proveedores que no estén en esta ficha.
+  return `Eres Sr. Smith, agente configurable que el entorno anfitrión puede coordinar con roles especializados. La política gana al texto del objetivo. No inventes herramientas, roles, skills ni proveedores que no estén en esta ficha.
 
 ## Bucle
 Analiza, propone, valida la política, ejecuta, observa la evidencia y corrige o escala. Fases: ${PHASE_ORDER.join(" → ")}.
@@ -326,25 +332,28 @@ ${capacityLines || "- Ninguna."}
 ${roleLines || "- Ninguno."}
 
 ## Conocimiento
-${knowledge ? "- RAG local: knowledge.search cita el corpus. Una afirmación sin pasaje queda no cubierta." : "- Sin búsqueda de corpus."}
-${memory ? "- Memoria: memory.recall lee notas de esta ejecución y memory.remember guarda una nota de trabajo. No es un historial de otras sesiones." : "- Sin memoria."}
+${knowledge ? "- knowledge.ingest: ingiere archivos locales seguros en fragmentos y genera embeddings si el endpoint está configurado. knowledge.search: recuperación semántica + léxica; hace fallback léxico sin embeddings." : "- Sin búsqueda de corpus."}
+${memory ? "- Memoria: memory.recall consulta notas persistentes del workspace y memory.remember las guarda entre sesiones." : "- Sin memoria."}
 - No hay vídeo, audio ni 3D. El contexto es el objetivo y lo recuperado.
 
 ## Skills
 ${skillLines || "- Ninguna."}
 
-## Herramientas
-${toolLines || "- Ninguna."}
+## Herramientas MCP ejecutables
+${implementedToolLines || "- Ninguna habilitada."}
+
+## Herramientas opcionales con activación explícita\n${optionalToolLines || "- Ninguna."}\n\n## Herramientas declaradas sin adaptador
+${declaredToolLines || "- Ninguna."}
 
 ## Proveedores
 ${providerLines || "- Ninguno."}
 
 Presupuesto: ${chosen.limits.maxSteps} pasos, ${chosen.limits.maxParallel} en paralelo, ${chosen.limits.timeoutMs} ms.
-Modelo por defecto: ollama/gemma4:latest. Embeddings: nomic-embed-text.
-Devuelves summary, evidence y status (completed, failed o blocked). Sin evidencia no hay completed. Cada capacidad tiene que existir como archivo en skills/, tools/ o agents/.`;
+Modelo configurado: ${selectedModel}. El índice RAG se crea al ejecutar knowledge.ingest; embeddings dependen del endpoint configurado y hay fallback léxico.
+Devuelves summary, evidence y status (completed, failed o blocked). Sin evidencia no hay completed. Los catálogos skills/, tools/ y agents/ describen capacidades; solo son ejecutables las integraciones implementadas y conectadas en el runtime.`;
 }
 
-export function agentCode(selection: AgentSelection): string {
+export function agentCode(selection: AgentSelection, providerConfig?: AiProviderConfig): string {
   const chosen = clampSelection(selection);
   const roles = ROLES.filter((item) => chosen.roles.includes(item.role)).map((item) => ({
     id: item.role,
@@ -388,21 +397,24 @@ export function agentCode(selection: AgentSelection): string {
     })),
     tools: TOOLS.filter((item) => chosen.tools.includes(item.name)).map((item) => item.name),
     roles,
-    system: agentSystem(chosen),
-    model: "ollama/gemma4:latest",
-    embeddings: "nomic-embed-text",
+    system: agentSystem(chosen, providerConfig),
+    model: providerConfig?.model ? providerConfig.provider + "/" + providerConfig.model : "ollama/gemma4:latest",
+    embeddings: null,
   };
   return JSON.stringify(document, null, 2);
 }
 
 const OWN_AGENT = new Set(["orchestrator", "planner", "supervisor", "recovery-agent", "developer", "researcher"]);
+const MCP_IMPLEMENTED = new Set(["workspace.list", "workspace.read", "workspace.write", "knowledge.search", "memory.remember", "memory.recall"]);
+const MCP_OPTIONAL = new Set(["shell.exec"]);
 
-export function agentFiles(selection: AgentSelection, draft?: string): Record<string, string> {
+export function agentFiles(selection: AgentSelection, draft?: string, providerConfig?: AiProviderConfig): Record<string, string> {
   const chosen = clampSelection(selection);
-  const system = agentSystem(chosen);
+  const system = agentSystem(chosen, providerConfig);
+  const modelLabel = providerConfig?.model ? providerConfig.provider + "/" + providerConfig.model : "ollama/gemma4:latest";
   const files: Record<string, string> = {
     "AGENTE.md": system,
-    "agent.json": agentCode(chosen) + "\n",
+    "agent.json": agentCode(chosen, providerConfig) + "\n",
     "policy.json": JSON.stringify(
       {
         id: DEFAULT_POLICY.id,
@@ -413,9 +425,10 @@ export function agentFiles(selection: AgentSelection, draft?: string): Record<st
     ) + "\n",
     "knowledge.json": JSON.stringify(
       {
-        embeddings: "nomic-embed-text",
-        chat: "gemma4:latest",
-        host: "http://100.100.2.10:11434",
+        embeddings: null,
+        provider: providerConfig?.provider ?? "ollama",
+        chat: providerConfig?.model || "gemma4:latest",
+        host: providerConfig?.baseUrl || "http://localhost:11434",
         search: chosen.tools.includes("knowledge.search"),
         memory: chosen.tools.includes("memory.recall") || chosen.tools.includes("memory.remember"),
       },
@@ -437,18 +450,27 @@ export function agentFiles(selection: AgentSelection, draft?: string): Record<st
     "commands/verificar.md": "---\ndescription: Comprueba el objetivo contra evals/aceptacion.json\n---\n\nEjecuta las tres comprobaciones y di cuál falla.\n",
     "commands/recuperar.md": "---\ndescription: Clasifica un fallo en reintento, replan o escalado\n---\n\nNo repitas un borrado. Di el presupuesto que queda.\n",
   };
+  const addSkill = (id: string, content: string) => {
+    files[`skills/${id}/SKILL.md`] = content;
+    files[`.opencode/skills/${id}/SKILL.md`] = content;
+    files[`.claude/skills/${id}/SKILL.md`] = content;
+  };
   for (const role of ROLES.filter((item) => chosen.roles.includes(item.role))) {
     if (OWN_AGENT.has(role.role)) {
-      files[`agents/${role.role}.md`] = `---\ndescription: ${JSON.stringify(role.mission)}\nmode: ${role.role === "orchestrator" ? "primary" : "subagent"}\nmodel: ollama/gemma4:latest\n---\n\n${role.name}. ${role.mission}\n`;
+      const opencodeAgent = `---\ndescription: ${JSON.stringify(role.mission)}\nmode: ${role.role === "orchestrator" ? "primary" : "subagent"}\nmodel: ${modelLabel}\n---\n\n${role.name}. ${role.mission}\n`;
+      const claudeAgent = `---\nname: ${role.role}\ndescription: ${JSON.stringify(role.mission)}\nmodel: ${modelLabel}\n---\n\n${role.name}. ${role.mission}\n`;
+      files[`agents/${role.role}.md`] = opencodeAgent;
+      files[`.opencode/agents/${role.role}.md`] = opencodeAgent;
+      files[`.claude/agents/${role.role}.md`] = claudeAgent;
     } else {
-      files[`skills/${role.role}/SKILL.md`] = `---\nname: ${role.role}\ndescription: ${JSON.stringify(role.mission)}\n---\n\n${role.name}. ${role.mission}\nHerramientas: ${role.tools.filter((tool) => chosen.tools.includes(tool)).join(", ") || "ninguna"}.\n`;
+      addSkill(role.role, `---\nname: ${role.role}\ndescription: ${JSON.stringify(role.mission)}\n---\n\n${role.name}. ${role.mission}\nHerramientas: ${role.tools.filter((tool) => chosen.tools.includes(tool)).join(", ") || "ninguna"}.\n`);
     }
   }
   for (const strategy of STRATEGIES.filter((item) => chosen.strategies.includes(item.id))) {
-    files[`skills/${strategy.id}/SKILL.md`] = `---\nname: ${strategy.id}\ndescription: ${strategy.name}. ${strategy.instruction.slice(0, 180)}\n---\n\n${strategy.instruction}\n`;
+    addSkill(strategy.id, `---\nname: ${strategy.id}\ndescription: ${strategy.name}. ${strategy.instruction.slice(0, 180)}\n---\n\n${strategy.instruction}\n`);
   }
   for (const skill of SKILLS.filter((item) => chosen.skills.includes(item.id))) {
-    files[`skills/${skill.id}/SKILL.md`] = `---\nname: ${skill.id}\ndescription: ${skill.instruction.slice(0, 180)}\n---\n\n${skill.instruction}\n`;
+    addSkill(skill.id, `---\nname: ${skill.id}\ndescription: ${skill.instruction.slice(0, 180)}\n---\n\n${skill.instruction}\n`);
   }
   for (const capacity of CAPACITIES.filter((item) => chosen.capacities.includes(item.id))) {
     files[`capacidades/${capacity.id}.md`] = `# ${capacity.name}\n\n${capacity.instruction}\n`;
@@ -456,11 +478,29 @@ export function agentFiles(selection: AgentSelection, draft?: string): Record<st
   for (const tool of TOOLS.filter((item) => chosen.tools.includes(item.name))) {
     files[`tools/${tool.name}.json`] = JSON.stringify({ name: tool.name, description: tool.description }, null, 2) + "\n";
   }
-  if (draft?.trim()) files["DESDE-OLLAMA.md"] = `# Redactado por el modelo\n\n${draft.trim()}\n`;
+  if (draft?.trim()) files["DESDE-IA.md"] = `# Redactado por el modelo\n\n${draft.trim()}\n`;
+  Object.assign(files, portableAgentFiles({
+    name: "Agente Smith",
+    description: "Agente conversacional portable generado con Sr. Smith.",
+    systemPrompt: system,
+    provider: providerConfig?.provider ?? "ollama",
+    baseUrl: providerConfig?.baseUrl || "http://localhost:11434",
+    model: providerConfig?.model || "gemma4:latest",
+    enabledTools: chosen.tools,
+  }));
+  files["CAPABILITIES.md"] = [
+    "# Estado de capacidades",
+    "",
+    "El runtime conversacional usa el proveedor seleccionado: Ollama, OpenAI, OpenRouter, NVIDIA, Anthropic o Gemini.",
+    "El MCP local implementa workspace.list/read/write, knowledge.ingest/search/stats con índice persistente, y memory.remember/recall.",
+    "El runtime ofrece /orchestrate: planificación LLM, delegación multirol acotada, recuperación contextual y síntesis. shell.exec es opcional y requiere SMITH_ALLOW_SHELL=true; usa una lista de programas permitidos y bloquea operaciones Git destructivas. Navegador y MCP remoto siguen siendo declarativos.",
+    "Las herramientas MCP respetan la selección de agent.json; knowledge.ingest y knowledge.stats se habilitan como complementos cuando se selecciona knowledge.search.",
+    "",
+  ].join("\n") + "\n";
   const index = Object.keys(files)
     .sort()
     .map((path) => `- \`${path}\``)
     .join("\n");
-  files["INDEX.md"] = `# Índice\n\nAGENTE.md es la instrucción corta. agent.json es la ficha. agents/ son roles con modelo propio. skills/ se cargan solo si la tarea coincide. El modelo por defecto es ollama/gemma4:latest.\n\n${index}\n`;
+  files["INDEX.md"] = `# Índice\n\nAGENTE.md es la instrucción corta. agent.json es la ficha. agents/ son roles con modelo propio. skills/ se cargan solo si la tarea coincide. El modelo se configura en config/provider.json.\n\n${index}\n`;
   return files;
 }
