@@ -12,6 +12,7 @@ import { grokPwaPlugin } from "./scripts/grok-pwa-plugin.mjs";
 // @ts-expect-error JS plugin alongside the TS vite config
 import { appEnvPlugin } from "./scripts/app-env-plugin.mjs";
 import { isMigrationFile } from "./scripts/migration-plan.mjs";
+import { handleProviderProxy } from "./server/lib/provider-proxy.ts";
 
 /** The files `src/lib/db.ts` globs — same directory, same non-recursive scope. */
 function hasGlobbedMigrations(root: string): boolean {
@@ -63,8 +64,10 @@ function pgliteBootstrapPlugin(): Plugin {
  * (full-page OAuth redirect), so `apply: "serve"` is enough.
  */
 function ollamaProxyPlugin(): Plugin {
-  const upstream = process.env.OLLAMA_UPSTREAM ?? "http://100.100.2.10:11434";
-  const proxy = new URL(process.env.OLLAMA_HTTP_PROXY ?? "http://127.0.0.1:1056");
+  const defaultUpstream = process.env.OLLAMA_UPSTREAM ?? "http://localhost:11434";
+  const proxyAddress = process.env.OLLAMA_HTTP_PROXY;
+  const proxy = proxyAddress ? new URL(proxyAddress) : null;
+  if (proxy && (proxy.protocol !== "http:" || proxy.username || proxy.password)) throw new Error("OLLAMA_HTTP_PROXY must be an unauthenticated HTTP proxy URL.");
   return {
     name: "sr-smith:ollama-proxy",
     apply: "serve",
@@ -79,13 +82,35 @@ function ollamaProxyPlugin(): Plugin {
         req.on("data", (chunk: Buffer) => chunks.push(chunk));
         req.on("end", () => {
           const body = Buffer.concat(chunks);
+          const requestedHost = String(req.headers["x-smith-ollama-host"] ?? defaultUpstream);
+          let upstream: URL;
+          try {
+            upstream = new URL(requestedHost);
+            const host = upstream.hostname;
+            const privateIpv4 =
+              /^10\./.test(host) ||
+              /^192\.168\./.test(host) ||
+              /^172\.(1[6-9]|2[0-9]|3[01])\./.test(host) ||
+              /^100\.(6[4-9]|[7-9][0-9]|1[01][0-9]|12[0-7])\./.test(host) ||
+              /^127\./.test(host);
+            if (upstream.protocol !== "http:" || upstream.username || upstream.password || !(host === "localhost" || host.endsWith(".local") || privateIpv4)) {
+              throw new Error("Ollama upstream must be a local, private or Tailscale address.");
+            }
+          } catch {
+            res.statusCode = 400;
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify({ error: "invalid_ollama_host" }));
+            return;
+          }
           const target = new URL(url.slice("/ollama-proxy".length), upstream);
+          const localTarget = upstream.hostname === "localhost" || upstream.hostname === "127.0.0.1" || upstream.hostname === "::1";
+          const useHttpProxy = !localTarget && proxy !== null;
           const preq = http.request(
             {
-              host: proxy.hostname,
-              port: proxy.port,
+              host: useHttpProxy ? proxy!.hostname : upstream.hostname,
+              port: useHttpProxy ? Number(proxy!.port || 80) : Number(upstream.port || 11434),
               method: req.method,
-              path: target.toString(),
+              path: useHttpProxy ? target.toString() : target.pathname + target.search,
               headers: {
                 host: target.host,
                 "content-type": req.headers["content-type"] ?? "application/json",
@@ -111,6 +136,44 @@ function ollamaProxyPlugin(): Plugin {
   };
 }
 
+function providerApiProxyPlugin(): Plugin {
+  return {
+    name: "sr-smith:provider-api-proxy",
+    apply: "serve",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        if ((req.url ?? "").split("?", 1)[0] !== "/api/ai") { next(); return; }
+        if ((req.method ?? "GET").toUpperCase() !== "POST") { res.statusCode = 405; res.end(); return; }
+        const origin = req.headers.origin;
+        if (origin) {
+          try { if (new URL(origin).host !== String(req.headers.host ?? "")) { res.statusCode = 403; res.end(); return; } }
+          catch { res.statusCode = 403; res.end(); return; }
+        }
+        const chunks: Buffer[] = [];
+        let size = 0;
+        req.on("data", (chunk: Buffer) => {
+          size += chunk.length;
+          if (size <= 100_000) chunks.push(chunk);
+        });
+        req.on("end", async () => {
+          if (size > 100_000) { res.statusCode = 413; res.end(); return; }
+          try {
+            const payload = JSON.parse(Buffer.concat(chunks).toString("utf8"));
+            const response = await handleProviderProxy(payload);
+            res.statusCode = response.status;
+            res.setHeader("content-type", response.headers.get("content-type") ?? "application/json");
+            res.setHeader("cache-control", "no-store");
+            res.end(await response.text());
+          } catch {
+            res.statusCode = 400;
+            res.setHeader("content-type", "application/json");
+            res.end(JSON.stringify({ error: "invalid_provider_request" }));
+          }
+        });
+      });
+    },
+  };
+}
 function authPopupPlugin(): Plugin {
   return {
     name: "app-builder:auth-popup",
@@ -213,6 +276,7 @@ export default defineConfig(({ command, isPreview }) => ({
   plugins: [
     pgliteBootstrapPlugin(),
     ollamaProxyPlugin(),
+    providerApiProxyPlugin(),
     // Before tanstackStart so /auth/popup never falls through to the SPA.
     authPopupPlugin(),
     // Dev-only /__app-env, read by scripts/check-auth-invariant.mjs.
@@ -224,8 +288,14 @@ export default defineConfig(({ command, isPreview }) => ({
     tanstackStart(
       pages
         ? {
-            prerender: { enabled: true, crawlLinks: false },
-            pages: [{ path: "/", prerender: { outputPath: ".output/public.html" } }],
+            spa: {
+              enabled: true,
+              prerender: {
+                enabled: true,
+                outputPath: ".output/public",
+                crawlLinks: false,
+              },
+            },
           }
         : undefined,
     ),
